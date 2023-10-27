@@ -1,8 +1,17 @@
-
 #include "simplePlugin.hh"
 #include <ObjectTypes/PolyMesh/PolyMesh.hh>
 #include <ObjectTypes/TriangleMesh/TriangleMesh.hh>
-#include "OpenFlipper/BasePlugin/PluginFunctions.hh"
+#include <ObjectTypes/PolyMesh/PolyMeshTypes.hh>
+#include <OpenFlipper/BasePlugin/PluginFunctions.hh>  
+#include <OpenFlipper/BasePlugin/BaseInterface.hh>  
+#include <OpenFlipper/common/GlobalOptions.hh>  
+#include <OpenFlipper/common/Types.hh>  
+#include <OpenFlipper/BasePlugin/PluginFunctions.hh>
+#include <OpenFlipper/common/BaseObject.hh>
+#include <QString>  
+#include <OpenFlipper/common/Types.hh>
+#include <ObjectTypes/PolyMesh/PolyMesh.hh>
+#include <OpenFlipper/common/ObjectTypeDLLDefines.hh>
 simplePlugin::simplePlugin() :
         iterationsSpinbox_(0)
 {
@@ -31,7 +40,6 @@ void simplePlugin::initializePlugin()
     emit addToolbox(tr("boolcalc"), _toolBox, toolIcon);
 }
 void simplePlugin::onUploadButton1Clicked() {
-    // 处理上传按钮1的点击事件  
     QString filePath = QFileDialog::getOpenFileName(this->_toolBox, "选择文件", "", "All Files (*.*);;Text Files (*.txt)");
     if (!filePath.isEmpty()) {
         QFile inputFile(filePath);
@@ -60,7 +68,7 @@ void simplePlugin::onUploadButton1Clicked() {
 }
 
 void simplePlugin::onUploadButton2Clicked() {
-    // 处理上传按钮2的点击事件  
+    simplePlugin::exampleFunction();
     QString filePath = QFileDialog::getOpenFileName(this->_toolBox, "选择文件", "", "All Files (*.*);;Text Files (*.txt)");
     if (!filePath.isEmpty()) {
         QFile inputFile(filePath);
@@ -86,6 +94,29 @@ void simplePlugin::onUploadButton2Clicked() {
 
         inputFile.close();
     }
+}
+
+void simplePlugin::exampleFunction() {
+  emit log(LOGERR, "exampleFunction.");
+  int newObjectId = -1;
+  // Emit the signal, that we want to create a new object of the specified type plane
+
+  emit addEmptyObject(DATA_POLY_MESH, newObjectId);
+  // Get the newly created object
+  PolyMeshObject* object;
+  PluginFunctions::getObject(newObjectId,object);
+  if(object) {
+      // Now you can use the object as usual, e.g. Get the node
+      PolyMesh* mesh = PluginFunctions::polyMesh(object);
+      // mesh->add_vertex(PolyMesh::Point(2, 1, 0));
+      // mesh->add_vertex(PolyMesh::Point(0, 1, 0));
+      // mesh->add_vertex(PolyMesh::Point(-2, 1, 3));
+      // mesh->add_vertex(PolyMesh::Point(12, 1, 3));
+      // mesh->add_vertex(PolyMesh::Point(2, 1, 0));
+      // ...
+  } else {
+    // Something went wrong when creating the object.
+  }
 }
 
 void simplePlugin::simpleLaplace()
