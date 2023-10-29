@@ -9,6 +9,9 @@
 #include <QLabel>
 #include <QGridLayout>
 #include <QSpinBox>
+#include "clipper2/clipper.h"
+using namespace Clipper2Lib;
+
 class simplePlugin : public QObject, BaseInterface, ToolboxInterface, LoggingInterface, LoadSaveInterface
 {
 	Q_OBJECT
@@ -45,6 +48,12 @@ private slots:
 	void simpleLaplace();
 	void onUploadButton1Clicked();
 	void onUploadButton2Clicked();
+	void draw(Paths64 p);
+	void calcUnion();
+	void calcDiff();
+	void calcXOR();
+	void clearAll();
+
 public slots:
 	QString version() { return QString("1.0"); };
 };
