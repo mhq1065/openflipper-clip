@@ -4,12 +4,24 @@
 #include <OpenFlipper/BasePlugin/ToolboxInterface.hh>
 #include <OpenFlipper/BasePlugin/LoggingInterface.hh>
 #include <OpenFlipper/BasePlugin/LoadSaveInterface.hh>
+#include <OpenFlipper/BasePlugin/PluginFunctions.hh>  
 #include <OpenFlipper/common/Types.hh>
+#include <OpenFlipper/common/ObjectTypeDLLDefines.hh>
+#include <OpenFlipper/common/GlobalOptions.hh>  
+#include <OpenFlipper/common/BaseObject.hh>
+#include <ObjectTypes/PolyMesh/PolyMesh.hh>
+#include <ObjectTypes/PolyMesh/PolyMeshTypes.hh>
+#include <ObjectTypes/TriangleMesh/TriangleMesh.hh>
+#include <OpenMesh/Core/System/config.h>
+#include <OpenMesh/Core/Mesh/Status.hh>
+#include <ACG/Scenegraph/TransformNode.hh>
 #include <QPushButton>
 #include <QLabel>
 #include <QGridLayout>
 #include <QSpinBox>
+#include <qdebug.h>
 #include "clipper2/clipper.h"
+
 using namespace Clipper2Lib;
 
 class simplePlugin : public QObject, BaseInterface, ToolboxInterface, LoggingInterface, LoadSaveInterface

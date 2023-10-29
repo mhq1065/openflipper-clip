@@ -1,20 +1,4 @@
 #include "simplePlugin.hh"
-#include <ObjectTypes/PolyMesh/PolyMesh.hh>
-#include <ObjectTypes/TriangleMesh/TriangleMesh.hh>
-#include <ObjectTypes/PolyMesh/PolyMeshTypes.hh>
-#include <OpenFlipper/BasePlugin/PluginFunctions.hh>  
-#include <OpenFlipper/BasePlugin/BaseInterface.hh>  
-#include <OpenFlipper/common/GlobalOptions.hh>  
-#include <OpenFlipper/common/Types.hh>  
-#include <OpenFlipper/BasePlugin/PluginFunctions.hh>
-#include <OpenFlipper/common/BaseObject.hh>
-#include <QString>  
-#include <OpenFlipper/common/Types.hh>
-#include <ObjectTypes/PolyMesh/PolyMesh.hh>
-#include <OpenFlipper/common/ObjectTypeDLLDefines.hh>
-#include <qdebug.h>
-#include <OpenMesh/Core/System/config.h>
-#include <OpenMesh/Core/Mesh/Status.hh>
 
 simplePlugin::simplePlugin():iterationsSpinbox_(0)
 {
@@ -193,6 +177,20 @@ void simplePlugin::draw(PathsD p){
         mesh->update_face_normals();
         emit updatedObject(newObjectId, UPDATE_ALL);
 
+        double a[3]{0}, b[3]{0}, c[3]{};
+        for (auto v_it = mesh->vertices_begin(); v_it != mesh->vertices_end(); ++v_it) {
+            auto vertex = mesh->point(*v_it);
+            printf("%.2f %.2f %.2f\n", vertex[0], vertex[1], vertex[2]);
+            for (int i = 0; i < 3; i++) {
+                a[i] = std::min(vertex[i], a[i]);
+                b[i] = std::max(vertex[i], b[i]);
+            }
+        }
+        for (int i = 0; i < 3; i++) {
+            c[i] = (a[i] + b[i]) / 2;
+        }
+        //PluginFunctions::setSceneCenter(ACG::Vec3d(c[0],c[1],c[2]),PluginFunctions::ALL_VIEWERS);
+        printf(" c %.2f %.2f %.2f\n", c[0], c[1], c[2]);
     }
     else {
         emit log(LOGERR, "ERR TO DRAW");
