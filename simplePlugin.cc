@@ -27,7 +27,10 @@ void simplePlugin::initializePlugin()
     QPushButton* uploadButton2 = new QPushButton("upload 2", _toolBox);
 
     QLabel* tipLabel1 = new QLabel("file 1", _toolBox);
+    tipLabel1->setObjectName("tipLabel1");
     QLabel* tipLabel2 = new QLabel("file 2", _toolBox);
+    tipLabel1->setObjectName("tipLabel2");
+
     QPushButton* unionClippingButton = new QPushButton ("union");
     QPushButton* diffClippingButton = new QPushButton ("diff");
     QPushButton* XORClippingButton = new QPushButton ("XOR");
@@ -51,11 +54,11 @@ void simplePlugin::initializePlugin()
     connect(unionClippingButton, SIGNAL(clicked()), this, SLOT(calcUnion()));
     connect(diffClippingButton, SIGNAL(clicked()), this, SLOT(calcDiff()));
     connect(XORClippingButton, SIGNAL(clicked()), this, SLOT(calcXOR()));
-    connect(clearButton, SIGNAL(clicked()), this, SLOT(clearAll()));
+    connect(clearButton, SIGNAL(clicked()), this, SLOT(clearDraw()));
 
     emit addToolbox(tr("boolcalc"), _toolBox, toolIcon);
-
 }
+
 void simplePlugin::onUploadButton1Clicked() {
     QString filePath = QFileDialog::getOpenFileName(this->_toolBox, "选择文件", "", "All Files (*.*);;Text Files (*.txt)");
     if (!filePath.isEmpty()) {
@@ -64,7 +67,6 @@ void simplePlugin::onUploadButton1Clicked() {
             qDebug() << "Failed to open the file.";
             return;
         }
-
         dataVector1.clear();
         QTextStream in(&inputFile);
         while (!in.atEnd()) {
@@ -79,8 +81,10 @@ void simplePlugin::onUploadButton1Clicked() {
                 }
             }
         }
-
         inputFile.close();
+        QFileInfo fileInfo(filePath);
+        QLayoutItem* item = qobject_cast<QGridLayout*>(_toolBox->layout())->itemAtPosition(0, 1);
+        qobject_cast<QLabel*>(item->widget())->setText(fileInfo.fileName());
     }
 }
 
@@ -109,10 +113,13 @@ void simplePlugin::onUploadButton2Clicked() {
         }
 
         inputFile.close();
+        QFileInfo fileInfo(filePath);
+        QLayoutItem* item = qobject_cast<QGridLayout*>(_toolBox->layout())->itemAtPosition(1, 1);
+        qobject_cast<QLabel*>(item->widget())->setText(fileInfo.fileName());
     }
 }
 
-void logPaths(Paths64& p) {
+void logPaths(PathsD& p) {
     for (auto i : p) {
         std::cout << i.size() << '\n';
         for (auto j : i) {
@@ -120,10 +127,10 @@ void logPaths(Paths64& p) {
         }
     }
 }
-void getCPath(QVector<QPair<float, float>>&dataVector, Paths64& a) {
-    Path64 t;
+void getCPath(QVector<QPair<float, float>>&dataVector, PathsD& a) {
+    PathD t;
     for (auto i:dataVector) {
-        t.push_back(Point64(i.first, i.second));
+        t.push_back(PointD(i.first, i.second));
     }
     a.push_back(t);
 }
@@ -144,7 +151,7 @@ void initVector2(QVector<QPair<float, float>>& dataVector) {
     dataVector.append(QPair<float, float>(1, 1));
 }
 
-void simplePlugin::draw(Paths64 p){
+void simplePlugin::draw(PathsD p){
     int newObjectId = -1;
 
     emit addEmptyObject(DATA_POLY_MESH, newObjectId);
@@ -159,20 +166,23 @@ void simplePlugin::draw(Paths64 p){
 
         PolyMesh* mesh = PluginFunctions::polyMesh(object);
         std::vector<PolyMesh::VertexHandle> face_vhandles;
-
         for (auto i : p) {
+            face_vhandles.clear();
             for (auto j : i) {
                 auto v0 = mesh->add_vertex(PolyMesh::Point(j.x, j.y, 0));
                 face_vhandles.push_back(v0);
             }
             mesh->add_face(face_vhandles);
-            mesh->request_vertex_normals();
-            //mesh->set_color(face1, PolyMesh::Color(255, 0, 0, 1));
+            
+            for (auto v_it = mesh->faces_begin(); v_it != mesh->faces_end(); ++v_it) {
+                mesh->set_color(*v_it, PolyMesh::Color(0.5, 0.50, 0.60, 0.4));
+            }
 
             // 更新网格对象  
             mesh->update_normals();
+            mesh->request_vertex_normals();
             mesh->update_face_normals();
-
+            emit updatedObject(newObjectId, UPDATE_COLOR);
         }
         //mesh->request_face_colors();
         //mesh-> request_vertex_normals();
@@ -182,6 +192,7 @@ void simplePlugin::draw(Paths64 p){
         mesh->update_normals();
         mesh->update_face_normals();
         emit updatedObject(newObjectId, UPDATE_ALL);
+
     }
     else {
         emit log(LOGERR, "ERR TO DRAW");
@@ -189,53 +200,52 @@ void simplePlugin::draw(Paths64 p){
 }
 void simplePlugin::calcUnion()
 {
-    initVector1(this->dataVector1);
-    initVector2(this->dataVector2);
-    Paths64 a, b, solution;
+    //initVector1(this->dataVector1);
+    //initVector2(this->dataVector2);
+    emit log(LOGINFO, "calcUnion");
+    PathsD a, b, solution;
     getCPath(this->dataVector1,a);
     getCPath(this->dataVector2,b);
-    logPaths(a);
-    logPaths(b);
     solution = Union(a, b, FillRule::NonZero);
     logPaths(solution);
-    emit log(LOGINFO, "abc123");
     draw(solution);
+    emit log(LOGINFO, "calcUnion success");
     //exampleFunction();
 }
 
 void simplePlugin::calcDiff()
 {
-    initVector1(this->dataVector1);
-    initVector2(this->dataVector2);
-    Paths64 a, b, solution;
+    //initVector1(this->dataVector1);
+    //initVector2(this->dataVector2);
+    emit log(LOGINFO, "calcDiff");
+    PathsD a, b, solution;
     getCPath(this->dataVector1, a);
     getCPath(this->dataVector2, b);
-    logPaths(a);
-    logPaths(b);
     solution = Difference(a, b, FillRule::NonZero);
     logPaths(solution);
-    emit log(LOGINFO, "abc123");
     draw(solution);
+    emit log(LOGINFO, "calcDiff success");
     //exampleFunction();
 }
 
 void simplePlugin::calcXOR()
 {
-    initVector1(this->dataVector1);
-    initVector2(this->dataVector2);
-    Paths64 a, b, solution;
+    //initVector1(this->dataVector1);
+    //initVector2(this->dataVector2);
+    emit log(LOGINFO, "calcXOR");
+    PathsD a, b, solution;
     getCPath(this->dataVector1, a);
     getCPath(this->dataVector2, b);
-    logPaths(a);
-    logPaths(b);
     solution = Xor(a, b, FillRule::NonZero);
     logPaths(solution);
-    emit log(LOGINFO, "abc123");
     draw(solution);
+    emit log(LOGINFO, "calcXOR success");
 }
 
-void simplePlugin::clearAll()
+void simplePlugin::clearDraw()
 {
+    emit deleteAllObjects();
+
 }
 
 void simplePlugin::exampleFunction() {

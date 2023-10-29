@@ -32,6 +32,7 @@ signals:
 	void addToolbox(QString _name, QWidget* _widget);
 	// LoadSaveInterface
 	void addEmptyObject(DataType _type, int& _id);
+	void deleteAllObjects();
 public:
 	simplePlugin();
 	// BaseInterface
@@ -48,11 +49,11 @@ private slots:
 	void simpleLaplace();
 	void onUploadButton1Clicked();
 	void onUploadButton2Clicked();
-	void draw(Paths64 p);
+	void draw(PathsD p);
 	void calcUnion();
 	void calcDiff();
 	void calcXOR();
-	void clearAll();
+	void clearDraw();
 
 public slots:
 	QString version() { return QString("1.0"); };
