@@ -1,4 +1,5 @@
 #include "simplePlugin.hh"
+#include "polygon2d.hh"
 
 simplePlugin::simplePlugin():iterationsSpinbox_(0)
 {
