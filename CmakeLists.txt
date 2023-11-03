@@ -1,9 +1,8 @@
 include (plugin)
 
 openflipper_plugin (
-    LIBRARIES D:/code/OpenFlipper-Free/Plugin-AA/lib/Clipper2_64.lib
-    INCDIRS clipper2
     INSTALLDATA Icons
     TYPES TRIANGLEMESH POLYMESH
+    DIRS PolygonClipping
     )
 

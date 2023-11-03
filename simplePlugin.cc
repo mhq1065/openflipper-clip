@@ -1,5 +1,21 @@
 #include "simplePlugin.hh"
-#include "polygon2d.hh"
+#include "PolygonClipping/PolygonClipping.h"
+
+void initVector1(QVector<QPair<float, float>>& dataVector) {
+    dataVector.append(QPair<float, float>(0, 0));
+    dataVector.append(QPair<float, float>(2, 0));
+    dataVector.append(QPair<float, float>(2, 2));
+    dataVector.append(QPair<float, float>(0, 2));
+    //dataVector.append(QPair<float, float>(0, 0));
+
+}
+void initVector2(QVector<QPair<float, float>>& dataVector) {
+    dataVector.append(QPair<float, float>(1, 1));
+    dataVector.append(QPair<float, float>(3, 1));
+    dataVector.append(QPair<float, float>(3, 3));
+    dataVector.append(QPair<float, float>(1, 3));
+    //dataVector.append(QPair<float, float>(1, 1));
+}
 
 simplePlugin::simplePlugin():iterationsSpinbox_(0)
 {
@@ -18,7 +34,7 @@ void simplePlugin::initializePlugin()
 
     QPushButton* unionClippingButton = new QPushButton ("union");
     QPushButton* diffClippingButton = new QPushButton ("diff");
-    QPushButton* XORClippingButton = new QPushButton ("XOR");
+    QPushButton* IntersectionClippingButton = new QPushButton ("Intersection");
     QPushButton* clearButton = new QPushButton ("clear");
 
     QGridLayout* gridLayout = new QGridLayout(_toolBox);
@@ -29,7 +45,7 @@ void simplePlugin::initializePlugin()
     gridLayout->addWidget(tipLabel2, 1, 1);
     gridLayout->addWidget(unionClippingButton, 2, 0);
     gridLayout->addWidget(diffClippingButton, 2, 1);
-    gridLayout->addWidget(XORClippingButton, 3, 0);
+    gridLayout->addWidget(IntersectionClippingButton, 3, 0);
     gridLayout->addWidget(clearButton, 3, 1);
     QIcon* toolIcon = new QIcon(OpenFlipper::Options::iconDirStr() + OpenFlipper::Options::dirSeparator() + "b.png");
 
@@ -38,7 +54,7 @@ void simplePlugin::initializePlugin()
     connect(uploadButton2, SIGNAL(clicked()), this, SLOT(onUploadButton2Clicked()));
     connect(unionClippingButton, SIGNAL(clicked()), this, SLOT(calcUnion()));
     connect(diffClippingButton, SIGNAL(clicked()), this, SLOT(calcDiff()));
-    connect(XORClippingButton, SIGNAL(clicked()), this, SLOT(calcXOR()));
+    connect(IntersectionClippingButton, SIGNAL(clicked()), this, SLOT(calcIntersection()));
     connect(clearButton, SIGNAL(clicked()), this, SLOT(clearDraw()));
 
     emit addToolbox(tr("boolcalc"), _toolBox, toolIcon);
@@ -104,39 +120,23 @@ void simplePlugin::onUploadButton2Clicked() {
     }
 }
 
-void logPaths(PathsD& p) {
-    for (auto i : p) {
-        std::cout << i.size() << '\n';
-        for (auto j : i) {
-            std::cout << j.x << ' '  << j.y << '\n';
-        }
-    }
-}
-void getCPath(QVector<QPair<float, float>>&dataVector, PathsD& a) {
-    PathD t;
+//void logPaths(PathsD& p) {
+//    for (auto i : p) {
+//        std::cout << i.size() << '\n';
+//        for (auto j : i) {
+//            std::cout << j.x << ' '  << j.y << '\n';
+//        }
+//    }
+//}
+PolyClip::Polygon getCPath(QVector<QPair<float, float>>&dataVector) {
+    std::vector<Point2d> t;
     for (auto i:dataVector) {
-        t.push_back(PointD(i.first, i.second));
+        t.push_back(Point2d(i.first, i.second));
     }
-    a.push_back(t);
+    return PolyClip::Polygon(t);
 }
 
-void initVector1(QVector<QPair<float, float>>&dataVector) {
-    dataVector.append(QPair<float, float>(0, 0));
-    dataVector.append(QPair<float, float>(2, 0));
-    dataVector.append(QPair<float, float>(2, 2));
-    dataVector.append(QPair<float, float>(0, 2));
-    dataVector.append(QPair<float, float>(0, 0));
-
-}
-void initVector2(QVector<QPair<float, float>>& dataVector) {
-    dataVector.append(QPair<float, float>(1, 1));
-    dataVector.append(QPair<float, float>(3, 1));
-    dataVector.append(QPair<float, float>(3, 3));
-    dataVector.append(QPair<float, float>(1, 3));
-    dataVector.append(QPair<float, float>(1, 1));
-}
-
-void simplePlugin::draw(PathsD p){
+void simplePlugin::draw(std::vector<std::vector<PolyClip::Point2d>> p){
     int newObjectId = -1;
 
     emit addEmptyObject(DATA_POLY_MESH, newObjectId);
@@ -154,7 +154,7 @@ void simplePlugin::draw(PathsD p){
         for (auto i : p) {
             face_vhandles.clear();
             for (auto j : i) {
-                auto v0 = mesh->add_vertex(PolyMesh::Point(j.x, j.y, 0));
+                auto v0 = mesh->add_vertex(PolyMesh::Point(j.x_, j.y_, 0));
                 face_vhandles.push_back(v0);
             }
             mesh->add_face(face_vhandles);
@@ -199,46 +199,58 @@ void simplePlugin::draw(PathsD p){
 }
 void simplePlugin::calcUnion()
 {
-    //initVector1(this->dataVector1);
-    //initVector2(this->dataVector2);
+    initVector1(this->dataVector1);
+    initVector2(this->dataVector2);
     emit log(LOGINFO, "calcUnion");
-    PathsD a, b, solution;
-    getCPath(this->dataVector1,a);
-    getCPath(this->dataVector2,b);
-    solution = Union(a, b, FillRule::NonZero);
-    logPaths(solution);
-    draw(solution);
+    PolyClip::Polygon a = getCPath(this->dataVector1);
+    PolyClip::Polygon b = getCPath(this->dataVector2);
+    PolyClip::PloygonOpration::DetectIntersection(a, b);
+    std::vector<std::vector<PolyClip::Point2d>> possible_result;
+    PolyClip::PloygonOpration::Mark(a, b, possible_result, PolyClip::MarkUnion);
+    std::vector<std::vector<PolyClip::Point2d>> results = PolyClip::PloygonOpration::ExtractUnionResults(a);
+
+    draw(results);
     emit log(LOGINFO, "calcUnion success");
     //exampleFunction();
 }
 
 void simplePlugin::calcDiff()
 {
-    //initVector1(this->dataVector1);
-    //initVector2(this->dataVector2);
+    initVector1(this->dataVector1);
+    initVector2(this->dataVector2);
     emit log(LOGINFO, "calcDiff");
-    PathsD a, b, solution;
-    getCPath(this->dataVector1, a);
-    getCPath(this->dataVector2, b);
-    solution = Difference(a, b, FillRule::NonZero);
-    logPaths(solution);
-    draw(solution);
+    PolyClip::Polygon a = getCPath(this->dataVector1);
+    PolyClip::Polygon b = getCPath(this->dataVector2);
+    PolyClip::PloygonOpration::DetectIntersection(a, b);
+    std::vector<std::vector<PolyClip::Point2d>> possible_result;
+    possible_result.clear();
+    if (PolyClip::PloygonOpration::Mark(a, b, possible_result, PolyClip::MarkDifferentiate)) {
+        std::vector<std::vector<PolyClip::Point2d>> results = PolyClip::PloygonOpration::ExtractDifferentiateResults(a);
+        draw(results);
+    }
+    else {
+        draw(possible_result);
+
+    }
+
     emit log(LOGINFO, "calcDiff success");
     //exampleFunction();
 }
 
-void simplePlugin::calcXOR()
+void simplePlugin::calcIntersection()
 {
-    //initVector1(this->dataVector1);
-    //initVector2(this->dataVector2);
-    emit log(LOGINFO, "calcXOR");
-    PathsD a, b, solution;
-    getCPath(this->dataVector1, a);
-    getCPath(this->dataVector2, b);
-    solution = Xor(a, b, FillRule::NonZero);
-    logPaths(solution);
-    draw(solution);
-    emit log(LOGINFO, "calcXOR success");
+    initVector1(this->dataVector1);
+    initVector2(this->dataVector2);
+    emit log(LOGINFO, "calcIntersection");
+    PolyClip::Polygon a = getCPath(this->dataVector1);
+    PolyClip::Polygon b = getCPath(this->dataVector2);
+    PolyClip::PloygonOpration::DetectIntersection(a, b);
+    std::vector<std::vector<PolyClip::Point2d>> possible_result;
+    PolyClip::PloygonOpration::Mark(a, b, possible_result, PolyClip::MarkIntersection);
+    std::vector<std::vector<PolyClip::Point2d>> results = PolyClip::PloygonOpration::ExtractIntersectionResults(a);
+
+    draw(results);
+    emit log(LOGINFO, "calcIntersection success");
 }
 
 void simplePlugin::clearDraw()

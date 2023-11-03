@@ -20,9 +20,9 @@
 #include <QGridLayout>
 #include <QSpinBox>
 #include <qdebug.h>
-#include "clipper2/clipper.h"
+#include "PolygonClipping/PolygonClipping.h"
 
-using namespace Clipper2Lib;
+using namespace PolyClip;
 
 class simplePlugin : public QObject, BaseInterface, ToolboxInterface, LoggingInterface, LoadSaveInterface
 {
@@ -61,10 +61,10 @@ private slots:
 	void simpleLaplace();
 	void onUploadButton1Clicked();
 	void onUploadButton2Clicked();
-	void draw(PathsD p);
+	void draw(std::vector<std::vector<PolyClip::Point2d>> p);
 	void calcUnion();
 	void calcDiff();
-	void calcXOR();
+	void calcIntersection();
 	void clearDraw();
 
 public slots:
