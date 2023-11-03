@@ -1,216 +1,397 @@
-typedef std::pair<double, double> node_pair;
-typedef std::vector<node_pair> vec;
-struct return_type {
-	int state;
-	node_pair r;
-	return_type(int state, node_pair r = node_pair(0, 0)) :state(state), r(r) {};
-};
-double distance(node_pair& v1, node_pair& v2) {
-	double x = v1.first - v2.first;
-	double y = v1.second - v2.second;
-	return std::sqrt(x * x + y * y);
-}
-struct Node {
-	node_pair vec;
-	double alpha;
-	bool intersect;
-	Node* next;
-	Node* prev;
-	Node* nextPoly;
-	Node* neighbor;
-	bool entry;
-	bool visited;
-	Node(node_pair& v, double a = 0, bool i = false)
-		: vec(v), alpha(a), intersect(i), next(nullptr), prev(nullptr) {};
-	Node* nextNonIntersection() {
-		Node* a = this;
-		while (a && a->intersect) {
-			a = a->next;
-		}
-		return a;
-	}
+#pragma once
 
-	Node* last() {
-		Node* a = this;
-		while (a->next && a->next != this) {
-			a = a->next;
-		}
-		return a;
-	}
+#include <iostream>
+#include <vector>
+#define eps 1e-6
 
-	void createLoop() {
-		Node* last = this->last();
-		last->prev->next = this;
-		this->prev = last->prev;
-	}
+namespace myPoly {
+	class Vertex;
+	
+	class Polygon
+	{
+	public:
+		Vertex* first;
+		int vertices;
+		Vertex* _lastUnprocessed;
+		bool _arrayVertices;
+		Vertex* _firstIntersect = nullptr;
 
-	Node* firstNodeOfInterest() {
-		Node* a = this;
+		Polygon(std::vector<std::pair<double, double>>  p, bool arrayVertices=true);
+		void addVertex(const std::pair<double, double>& vertex);
+		void insertVertex(Vertex* vertex, Vertex* start, Vertex* end);
+		Vertex* getNext(Vertex* c);
+		bool hasUnprocessed();
+		Vertex* getFirstIntersect();
+		std::vector<std::pair<double, double>>  getPoints();
+		std::vector<std::vector<std::pair<double, double>> > clip(Polygon* clip, bool sourceForwards, bool clipForwards);
+		void show();
+	};
 
-		if (a) {
-			do {
-				a = a->next;
-			} while (a != this && (!a->intersect || (a->intersect && a->visited)));
-		}
+	class Vertex {
+	public:
+		double x, y;
+		Vertex* next;
+		Vertex* prev;
+		Vertex* _corresponding;
+		double _distance;
+		bool _isEntry;
+		bool _isIntersection;
+		bool _visited;
 
-		return a;
-	}
+		Vertex(std::pair<double, double> n) : x(n.first), y(n.second), next(nullptr), prev(nullptr), _corresponding(nullptr),
+			_distance(0.0), _isEntry(true), _isIntersection(false), _visited(false) {};
 
-	void insertBetween(Node* first, Node* last) {
-		Node* a = first;
-		while (a != last && a->alpha < this->alpha) {
-			a = a->next;
-		}
-
-		this->next = a;
-		this->prev = a->prev;
-		if (this->prev) {
-			this->prev->next = this;
-		}
-
-		this->next->prev = this;
-	}
-	void show() {
-		std::cout << vec.first << ' ' << vec.second << '\n';
-	}
-};
+		Vertex(double x, double y) : x(x), y(y), next(nullptr), prev(nullptr), _corresponding(nullptr),
+			_distance(0.0), _isEntry(true), _isIntersection(false), _visited(false) {};
+		Vertex createIntersection(double x, double y, double distance);
+		void visit();
+		bool equals(const Vertex& v);
+		bool isInside(Polygon* p);
+	};
 
 
+	class segseg {
+	public:
+		double x;
+		double y;
+		double toSource;
+		double toClip;
 
-return_type segseg(node_pair a, node_pair b, node_pair c, node_pair d) {
-	double x1 = a.first;
-	double y1 = a.second;
-	double x2 = b.first;
-	double y2 = b.second;
-	double x3 = c.first;
-	double y3 = c.second;
-	double x4 = d.first;
-	double y4 = d.second;
+		segseg(Vertex* s1, Vertex* s2, Vertex* c1, Vertex* c2) {
+			x = 0.0;
+			y = 0.0;
+			toSource = 0.0;
+			toClip = 0.0;
 
-	double denom = (y4 - y3) * (x2 - x1) - (x4 - x3) * (y2 - y1);
+			double d = (c2->y - c1->y) * (s2->x - s1->x) - (c2->x - c1->x) * (s2->y - s1->y);
 
-	if (denom == 0) {
-		// 线段平行或重叠，没有交点  
-		return return_type(-1);
-	}
+			if (abs(d) < eps)
+				return;
 
-	double ua = ((x4 - x3) * (y1 - y3) - (y4 - y3) * (x1 - x3)) / denom;
-	double ub = ((x2 - x1) * (y1 - y3) - (y2 - y1) * (x1 - x3)) / denom;
+			toSource = ((c2->x - c1->x) * (s1->y - c1->y) - (c2->y - c1->y) * (s1->x - c1->x)) / d;
+			toClip = ((s2->x - s1->x) * (s1->y - c1->y) - (s2->y - s1->y) * (s1->x - c1->x)) / d;
 
-	if (ua >= 0 && ua <= 1 && ub >= 0 && ub <= 1) {
-		// 计算交点坐标  
-		double x = x1 + ua * (x2 - x1);
-		double y = y1 + ua * (y2 - y1);
-		return return_type(0, node_pair(x, y));
-	}
-
-	// 线段相交，但交点不在两个线段上  
-	return return_type(1);
-}
-
-Node* createLinkedList(vec& vecs) {
-	int l = vecs.size();
-	Node* ret = nullptr;
-	Node* where = nullptr;
-	for (int i = 0; i < l; i++) {
-		auto current = vecs[i];
-		if (!ret) {
-			where = ret = new Node(current);
-		}
-		else {
-			where->next = new Node(current);
-			where->next->prev = where;
-			where = where->next;
-		}
-	}
-
-	return ret;
-}
-
-
-bool identifyIntersections(Node* subjectList, Node* clipList) {
-	Node* subject;
-	Node* clip;
-	// 新建两个与头节点值相同的虚拟节点，与尾节点相连
-	// TODO 存疑
-	Node* auxs = subjectList->last();
-	auxs->next = new Node(subjectList->vec);
-	auxs->next->prev = auxs;
-
-	Node* auxc = clipList->last();
-	auxc->next = new Node(clipList->vec);
-	auxc->next->prev = auxc;
-
-	bool found = false;
-	for (subject = subjectList; subject->next != nullptr; subject = subject->next) {
-		if (!subject->intersect) {
-			for (clip = clipList; clip->next; clip = clip->next) {
-				if (!clip->intersect) {
-					auto a = subject->vec;
-					auto b = subject->next->nextNonIntersection()->vec;
-					auto c = clip->vec;
-					auto d = clip->next->nextNonIntersection()->vec;
-
-					auto i = segseg(a, b, c, d);
-
-					if (i.state == 0) {
-						found = true;
-						Node* intersectionSubject = new Node(i.r, distance(a, i.r) / distance(a, b), true);
-						Node* intersectionClip = new Node(i.r, distance(c, i.r) / distance(c, d), true);
-						intersectionSubject->neighbor = intersectionClip;
-						intersectionClip->neighbor = intersectionSubject;
-						intersectionSubject->show();
-						intersectionSubject->insertBetween(subject, subject->next->nextNonIntersection());
-						intersectionClip->insertBetween(clip, clip->next->nextNonIntersection());
-					}
-				}
+			if (valid()) {
+				x = s1->x + toSource * (s2->x - s1->x);
+				y = s1->y + toSource * (s2->y - s1->y);
 			}
 		}
+
+		bool valid() {
+			return (0 < toSource && toSource < 1) && (0 < toClip && toClip < 1);
+		}
+	};
+
+	Vertex* createIntersection(double x, double y, double distance) {
+		auto vertex = new Vertex(x, y);
+		vertex->_distance = distance;
+		vertex->_isIntersection = true;
+		vertex->_isEntry = false;
+		return vertex;
 	}
 
-	return found;
-}
-
-void identifyIntersectionType(Node* subjectList, Node* clipList,
-	bool (*clipTest)(const std::vector<double>&), bool (*subjectTest)(const std::vector<double>&),
-	const std::string& type) {
-	Node* subject = subjectList;
-	Node* clip = clipList;
-	bool se = clipTest(subjectList->vec) < 0;
-	if (type == "and") {
-		se = !se;
-	}
-
-	while (subject->next) {
-		subject = subject->next;
-		if (subject->intersect) {
-			subject->entry = se;
-			se = !se;
+	inline Polygon::Polygon(std::vector<std::pair<double, double>>  p, bool arrayVertices)
+		: first(nullptr), vertices(0), _lastUnprocessed(nullptr), _arrayVertices(arrayVertices) {
+		for (auto& point : p) {
+			addVertex(point);
 		}
 	}
+	
+	void Polygon::addVertex(const std::pair<double, double>& vertex) {
+		if (first == nullptr) {
+			first = new Vertex(vertex);
+			first->next = first;
+			first->prev = first;
+		}
+		else {
+			Vertex* next = first;
+			Vertex* prev = next->prev;
 
-	bool ce = subjectTest(clipList->vec) > 0;
-	if (type == "or") {
-		ce = !ce;
+			next->prev = new Vertex(vertex);
+			next->prev->next = next;
+			next->prev->prev = prev;
+			prev->next = next->prev;
+		}
+		vertices++;
 	}
 
-	while (clip->next) {
-		clip = clip->next;
-		if (clip->intersect) {
-			clip->entry = ce;
-			ce = !ce;
+	inline void Polygon::insertVertex(Vertex* vertex, Vertex* start, Vertex* end) {
+		//Vertex* vertex = new Vertex(n);
+		Vertex* prev = nullptr;
+		Vertex* curr = start;
+
+		while (!curr->equals(*end) && curr->_distance < vertex->_distance) {
+			curr = curr->next;
+		}
+
+		vertex->next = curr;
+		prev = curr->prev;
+
+		vertex->prev = prev;
+		prev->next = vertex;
+		curr->prev = vertex;
+
+		vertices++;
+	}
+
+	Vertex* Polygon::getNext(Vertex* v) {
+		auto c = v;
+		while (c->_isIntersection) c = c->next;
+		return c;
+	}
+	
+	//TODO
+	inline bool Polygon::hasUnprocessed() {
+		Vertex* v = this->_lastUnprocessed ? this->_lastUnprocessed : this->first;
+
+		do {
+			if (v->_isIntersection && !v->_visited) {
+				this->_lastUnprocessed = v;
+				return true;
+			}
+
+			v = v->next;
+		} while (!v->equals(*this->first));
+
+		this->_lastUnprocessed = nullptr;
+		return false;
+	}
+	//TODO
+	inline Vertex* Polygon::getFirstIntersect() {
+		Vertex* v = this->_firstIntersect ? this->_firstIntersect : this->first;
+
+		do {
+			if (v->_isIntersection && !v->_visited) break;
+
+			v = v->next;
+		} while (!v->equals(*this->first));
+
+		this->_firstIntersect = v;
+		return v;
+	}
+	std::vector<std::pair<double, double>>  Polygon::getPoints() {
+		std::vector<std::pair<double, double>>  points;
+		Vertex* v = this->first;
+
+		if (this->_arrayVertices) {
+			do {
+				points.push_back(std::make_pair(v->x, v->y));
+				v = v->next;
+			} while (v != this->first);
+		}
+		else {
+			do {
+				points.push_back(std::make_pair(v->x, v->y));
+				v = v->next;
+			} while (v != this->first);
+		}
+
+		return points;
+	}
+
+	//TODO
+	inline std::vector<std::vector<std::pair<double, double>> > Polygon::clip(Polygon* clip, bool sourceForwards, bool clipForwards) {
+		Vertex* sourceVertex = this->first;
+		Vertex* clipVertex = clip->first;
+		bool sourceInClip, clipInSource;
+
+		bool isUnion = !sourceForwards && !clipForwards;
+		bool isIntersection = sourceForwards && clipForwards;
+		bool isDiff = !isUnion && !isIntersection;
+
+		// calculate and mark intersections  
+		do {
+			if (!sourceVertex->_isIntersection) {
+				Vertex* clipVertex = clip->first;
+
+				do {
+					if (!clipVertex->_isIntersection) {
+						segseg i(
+							sourceVertex,
+							this->getNext(sourceVertex->next),
+							clipVertex,
+							clip->getNext(clipVertex->next)
+						);
+
+						if (i.valid()) {
+							Vertex* sourceIntersection = createIntersection(i.x, i.y, i.toSource);
+							Vertex* clipIntersection = createIntersection(i.x, i.y, i.toClip);
+
+							sourceIntersection->_corresponding = clipIntersection;
+							clipIntersection->_corresponding = sourceIntersection;
+
+							this->insertVertex(sourceIntersection, sourceVertex, this->getNext(sourceVertex->next));
+							clip->insertVertex(clipIntersection, clipVertex, clip->getNext(clipVertex->next));
+						}
+					}
+
+					clipVertex = clipVertex->next;
+				} while (!clipVertex->equals(*clip->first));
+			}
+
+			sourceVertex = sourceVertex->next;
+		} while (!sourceVertex->equals(*this->first));
+
+		// phase three - construct a list of clipped std::vector<std::pair<double, double>> gons  
+		sourceVertex = this->first;
+		clipVertex = clip->first;
+
+		sourceInClip = sourceVertex->isInside(clip);
+		clipInSource = clipVertex->isInside(this);
+
+		sourceForwards ^= sourceInClip;
+		clipForwards ^= clipInSource;
+
+		do {
+			if (sourceVertex->_isIntersection) {
+				sourceVertex->_isEntry = sourceForwards;
+				sourceForwards = !sourceForwards;
+			}
+			sourceVertex = sourceVertex->next;
+		} while (!sourceVertex->equals(*this->first));
+
+		do {
+			if (clipVertex->_isIntersection) {
+				clipVertex->_isEntry = clipForwards;
+				clipForwards = !clipForwards;
+			}
+			clipVertex = clipVertex->next;
+		} while (!clipVertex->equals(*clip->first));
+
+		// phase three - construct a list of clipped std::vector<std::pair<double, double>> gons
+
+		std::vector<std::vector<std::pair<double, double>> > list;
+
+		while (this->hasUnprocessed()) {
+			Vertex* current = this->getFirstIntersect();
+			Polygon clipped(std::vector<std::pair<double, double>> (),this->_arrayVertices);
+			clipped.addVertex(std::make_pair(current->x, current->y));
+
+			do {
+				current->visit();
+
+				if (current->_isEntry) {
+					do {
+						current = current->next;
+						clipped.addVertex(std::make_pair(current->x, current->y));
+					} while (!current->_isIntersection);
+				}
+				else {
+					do {
+						current = current->prev;
+						clipped.addVertex(std::make_pair(current->x, current->y));
+					} while (!current->_isIntersection);
+				}
+
+				current = current->_corresponding;
+			} while (!current->_visited);
+
+			list.push_back(clipped.getPoints());
+		}
+
+		if (list.empty()) {
+			if (isUnion) {
+				if (sourceInClip)
+					list.push_back(clip->getPoints());
+				else if (clipInSource)
+					list.push_back(this->getPoints());
+				else {
+					list.push_back(this->getPoints());
+					list.push_back(clip->getPoints());
+				}
+			}
+			else if (isIntersection) {
+				if (sourceInClip)
+					list.push_back(this->getPoints());
+				else if (clipInSource)
+					list.push_back(clip->getPoints());
+			}
+			else {
+				if (sourceInClip) {
+					list.push_back(clip->getPoints());
+					list.push_back(this->getPoints());
+				}
+				else if (clipInSource) {
+					list.push_back(this->getPoints());
+					list.push_back(clip->getPoints());
+				}
+				else
+					list.push_back(this->getPoints());
+			}
+
+		}
+
+		return list;
+	}
+
+	inline void Polygon::show()
+	{
+		if (first == nullptr)return;
+		auto t = first;
+		printf("start show std::vector<std::pair<double, double>> gon\n");
+		do{
+			printf("%.2f %.2f\n", t->x, t->y);
+			t = t->next;
+		} while (t&&t!=first);
+		printf("end show std::vector<std::pair<double, double>> gon\n");
+	}
+
+	void Vertex::visit() {
+		_visited = true;
+		if (_corresponding != nullptr && !_corresponding->_visited) {
+			_corresponding->visit();
 		}
 	}
-}
-vec polygonBoolean(vec subjectPoly, vec clipPoly, int type) {
-	auto subjectList = createLinkedList(subjectPoly);
-	auto clipList = createLinkedList(clipPoly);
-
-	auto isects = identifyIntersections(subjectList, clipList);
-	if (isects) {
-		// Phase 2: walk the resulting linked list and mark each intersection
-//          as entering or exiting
-
+	
+	bool Vertex::equals(const Vertex& v) {
+		return x == v.x && y == v.y;
 	}
-	return vec();
+
+	inline bool myPoly::Vertex::isInside(Polygon* p)
+	{
+		bool oddNodes = false;
+		Vertex* vertex = p->first;
+		Vertex* next = vertex->next;
+		const double x = this->x;
+		const double y = this->y;
+
+		do {
+			if ((vertex->y < y && next->y >= y ||
+				next->y < y && vertex->y >= y) &&
+				(vertex->x <= x || next->x <= x)) {
+				oddNodes ^= (vertex->x + (y - vertex->y) /
+					(next->y - vertex->y) * (next->x - vertex->x) < x);
+			}
+
+			vertex = vertex->next;
+			next = vertex->next ? vertex->next : p->first;
+		} while (!vertex->equals(*p->first));
+		return oddNodes;
+	}
+
+	std::vector<std::vector<std::pair<double, double>> > Boolean(
+		std::vector<std::pair<double, double>>polygonA,
+		std::vector<std::pair<double, double>> polygonB,
+		bool eA, bool eB)
+	{
+		auto source = new Polygon(polygonA);
+		auto clip = new Polygon(polygonB);
+		return source->clip(clip, eA, eB);
+	}
+
+	std::vector<std::vector<std::pair<double, double>>> Union(
+		std::vector<std::pair<double, double>> polygonA,
+		std::vector<std::pair<double, double>> polygonB) {
+		return Boolean(polygonA, polygonB, false, false);
+	}
+	std::vector<std::vector<std::pair<double, double>>> Intersection(
+		std::vector<std::pair<double, double>> polygonA,
+		std::vector<std::pair<double, double>> polygonB) {
+		return Boolean(polygonA, polygonB, true, true);
+	}
+	std::vector<std::vector<std::pair<double, double>>> Diff(
+		std::vector<std::pair<double, double>> polygonA,
+		std::vector<std::pair<double, double>> polygonB) {
+		return Boolean(polygonA, polygonB, false, true);
+	}
 }

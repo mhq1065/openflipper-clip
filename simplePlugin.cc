@@ -1,24 +1,29 @@
 #include "simplePlugin.hh"
-#include "PolygonClipping/PolygonClipping.h"
+#include "polygon2d.hh"
 
-void initVector1(QVector<QPair<float, float>>& dataVector) {
-    dataVector.append(QPair<float, float>(0, 0));
-    dataVector.append(QPair<float, float>(2, 0));
-    dataVector.append(QPair<float, float>(2, 2));
-    dataVector.append(QPair<float, float>(0, 2));
-    //dataVector.append(QPair<float, float>(0, 0));
+void initVector1(QVector<QPair<double, double>>& dataVector) {
+    dataVector.clear();
+    dataVector.append(QPair<double, double>(0, 0));
+    dataVector.append(QPair<double, double>(3, 0));
+    dataVector.append(QPair<double, double>(3, 3));
+    dataVector.append(QPair<double, double>(0, 3));
+    //dataVector.append(QPair<double, double>(0, 0));
 
 }
-void initVector2(QVector<QPair<float, float>>& dataVector) {
-    dataVector.append(QPair<float, float>(1, 1));
-    dataVector.append(QPair<float, float>(3, 1));
-    dataVector.append(QPair<float, float>(3, 3));
-    dataVector.append(QPair<float, float>(1, 3));
-    //dataVector.append(QPair<float, float>(1, 1));
+void initVector2(QVector<QPair<double, double>>& dataVector) {
+    dataVector.clear();
+    dataVector.append(QPair<double, double>(1, 1));
+    dataVector.append(QPair<double, double>(4, 1));
+    dataVector.append(QPair<double, double>(4, 4));
+    dataVector.append(QPair<double, double>(1, 4));
+    //dataVector.append(QPair<double, double>(1, 1));
 }
 
 simplePlugin::simplePlugin():iterationsSpinbox_(0)
 {
+    initVector1(this->dataVector1);
+    initVector2(this->dataVector2);
+
 }
 void simplePlugin::initializePlugin()
 {
@@ -75,10 +80,10 @@ void simplePlugin::onUploadButton1Clicked() {
             QStringList values = line.split(" ");
             if (values.size() == 2) {
                 bool ok1, ok2;
-                float value1 = values[0].toFloat(&ok1);
-                float value2 = values[1].toFloat(&ok2);
+                double value1 = values[0].toFloat(&ok1);
+                double value2 = values[1].toFloat(&ok2);
                 if (ok1 && ok2) {
-                    dataVector1.append(QPair<float, float>(value1, value2));
+                    dataVector1.append(QPair<double, double>(value1, value2));
                 }
             }
         }
@@ -105,10 +110,10 @@ void simplePlugin::onUploadButton2Clicked() {
             QStringList values = line.split(" ");
             if (values.size() == 2) {
                 bool ok1, ok2;
-                float value1 = values[0].toFloat(&ok1);
-                float value2 = values[1].toFloat(&ok2);
+                double value1 = values[0].toFloat(&ok1);
+                double value2 = values[1].toFloat(&ok2);
                 if (ok1 && ok2) {
-                    dataVector2.append(QPair<float, float>(value1, value2));
+                    dataVector2.append(QPair<double, double>(value1, value2));
                 }
             }
         }
@@ -128,15 +133,15 @@ void simplePlugin::onUploadButton2Clicked() {
 //        }
 //    }
 //}
-PolyClip::Polygon getCPath(QVector<QPair<float, float>>&dataVector) {
-    std::vector<Point2d> t;
+std::vector<std::pair<double, double>> getCPath(QVector<QPair<double, double>>&dataVector) {
+    std::vector<std::pair<double,double>> t;
     for (auto i:dataVector) {
-        t.push_back(Point2d(i.first, i.second));
+        t.push_back(std::make_pair(i.first, i.second));
     }
-    return PolyClip::Polygon(t);
+    return t;
 }
 
-void simplePlugin::draw(std::vector<std::vector<PolyClip::Point2d>> p){
+void simplePlugin::draw(std::vector<std::vector<std::pair<double, double>>> p){
     int newObjectId = -1;
 
     emit addEmptyObject(DATA_POLY_MESH, newObjectId);
@@ -154,14 +159,16 @@ void simplePlugin::draw(std::vector<std::vector<PolyClip::Point2d>> p){
         for (auto i : p) {
             face_vhandles.clear();
             for (auto j : i) {
-                auto v0 = mesh->add_vertex(PolyMesh::Point(j.x_, j.y_, 0));
+                auto v0 = mesh->add_vertex(PolyMesh::Point(j.first, j.second, 0));
                 face_vhandles.push_back(v0);
             }
+            printf("\n");
+
             mesh->add_face(face_vhandles);
             
-            for (auto v_it = mesh->faces_begin(); v_it != mesh->faces_end(); ++v_it) {
+            /*for (auto v_it = mesh->faces_begin(); v_it != mesh->faces_end(); ++v_it) {
                 mesh->set_color(*v_it, PolyMesh::Color(0.5, 0.50, 0.60, 0.4));
-            }
+            }*/
 
             // 更新网格对象  
             mesh->update_normals();
@@ -177,21 +184,7 @@ void simplePlugin::draw(std::vector<std::vector<PolyClip::Point2d>> p){
         mesh->update_normals();
         mesh->update_face_normals();
         emit updatedObject(newObjectId, UPDATE_ALL);
-
-        double a[3]{0}, b[3]{0}, c[3]{};
-        for (auto v_it = mesh->vertices_begin(); v_it != mesh->vertices_end(); ++v_it) {
-            auto vertex = mesh->point(*v_it);
-            printf("%.2f %.2f %.2f\n", vertex[0], vertex[1], vertex[2]);
-            for (int i = 0; i < 3; i++) {
-                a[i] = std::min(vertex[i], a[i]);
-                b[i] = std::max(vertex[i], b[i]);
-            }
-        }
-        for (int i = 0; i < 3; i++) {
-            c[i] = (a[i] + b[i]) / 2;
-        }
-        //PluginFunctions::setSceneCenter(ACG::Vec3d(c[0],c[1],c[2]),PluginFunctions::ALL_VIEWERS);
-        printf(" c %.2f %.2f %.2f\n", c[0], c[1], c[2]);
+   
     }
     else {
         emit log(LOGERR, "ERR TO DRAW");
@@ -199,39 +192,42 @@ void simplePlugin::draw(std::vector<std::vector<PolyClip::Point2d>> p){
 }
 void simplePlugin::calcUnion()
 {
-    initVector1(this->dataVector1);
-    initVector2(this->dataVector2);
+    //initVector1(this->dataVector1);
+    //initVector2(this->dataVector2);
     emit log(LOGINFO, "calcUnion");
-    PolyClip::Polygon a = getCPath(this->dataVector1);
-    PolyClip::Polygon b = getCPath(this->dataVector2);
-    PolyClip::PloygonOpration::DetectIntersection(a, b);
-    std::vector<std::vector<PolyClip::Point2d>> possible_result;
-    PolyClip::PloygonOpration::Mark(a, b, possible_result, PolyClip::MarkUnion);
-    std::vector<std::vector<PolyClip::Point2d>> results = PolyClip::PloygonOpration::ExtractUnionResults(a);
+    auto a = getCPath(this->dataVector1);
+    auto b = getCPath(this->dataVector2);
+    auto results = myPoly::Union(a, b);
+    printf("union\n");
+    for (auto i : results) {
+        for (auto j : i) {
+            printf("%.2f %.2f\n", j.first, j.second);
+        }
+        printf("\n");
 
-    draw(results);
+    }
+;   draw(results); 
     emit log(LOGINFO, "calcUnion success");
     //exampleFunction();
 }
 
 void simplePlugin::calcDiff()
 {
-    initVector1(this->dataVector1);
-    initVector2(this->dataVector2);
+    //initVector1(this->dataVector1);
+    //initVector2(this->dataVector2);
     emit log(LOGINFO, "calcDiff");
-    PolyClip::Polygon a = getCPath(this->dataVector1);
-    PolyClip::Polygon b = getCPath(this->dataVector2);
-    PolyClip::PloygonOpration::DetectIntersection(a, b);
-    std::vector<std::vector<PolyClip::Point2d>> possible_result;
-    possible_result.clear();
-    if (PolyClip::PloygonOpration::Mark(a, b, possible_result, PolyClip::MarkDifferentiate)) {
-        std::vector<std::vector<PolyClip::Point2d>> results = PolyClip::PloygonOpration::ExtractDifferentiateResults(a);
-        draw(results);
-    }
-    else {
-        draw(possible_result);
+    auto a = getCPath(this->dataVector1);
+    auto b = getCPath(this->dataVector2);
+    auto results = myPoly::Diff(a, b);
 
+    printf("Diff\n");
+    for (auto i : results) {
+        for (auto j : i) {
+            printf("%.2f %.2f\n", j.first, j.second);
+        }
+        printf("\n");
     }
+    draw(results);
 
     emit log(LOGINFO, "calcDiff success");
     //exampleFunction();
@@ -239,17 +235,22 @@ void simplePlugin::calcDiff()
 
 void simplePlugin::calcIntersection()
 {
-    initVector1(this->dataVector1);
-    initVector2(this->dataVector2);
+    //initVector1(this->dataVector1);
+    //initVector2(this->dataVector2);
     emit log(LOGINFO, "calcIntersection");
-    PolyClip::Polygon a = getCPath(this->dataVector1);
-    PolyClip::Polygon b = getCPath(this->dataVector2);
-    PolyClip::PloygonOpration::DetectIntersection(a, b);
-    std::vector<std::vector<PolyClip::Point2d>> possible_result;
-    PolyClip::PloygonOpration::Mark(a, b, possible_result, PolyClip::MarkIntersection);
-    std::vector<std::vector<PolyClip::Point2d>> results = PolyClip::PloygonOpration::ExtractIntersectionResults(a);
+    auto a = getCPath(this->dataVector1);
+    auto b = getCPath(this->dataVector2);
+    auto results = myPoly::Intersection(a, b);
+    printf("Intersection\n");
+    for (auto i : results) {
+        for (auto j : i) {
+            printf("%.2f %.2f\n", j.first, j.second);
+        }
+        printf("\n");
 
+    }
     draw(results);
+
     emit log(LOGINFO, "calcIntersection success");
 }
 

@@ -20,9 +20,6 @@
 #include <QGridLayout>
 #include <QSpinBox>
 #include <qdebug.h>
-#include "PolygonClipping/PolygonClipping.h"
-
-using namespace PolyClip;
 
 class simplePlugin : public QObject, BaseInterface, ToolboxInterface, LoggingInterface, LoadSaveInterface
 {
@@ -53,7 +50,7 @@ public:
 private:
 	QWidget* _toolBox;
 	QSpinBox* iterationsSpinbox_;
-	QVector<QPair<float, float>>dataVector1, dataVector2;
+	QVector<QPair<double, double>>dataVector1, dataVector2;
 	void exampleFunction();
 private slots:
 	// BaseInterface
@@ -61,7 +58,7 @@ private slots:
 	void simpleLaplace();
 	void onUploadButton1Clicked();
 	void onUploadButton2Clicked();
-	void draw(std::vector<std::vector<PolyClip::Point2d>> p);
+	void draw(std::vector<std::vector<std::pair<double, double>>> p);
 	void calcUnion();
 	void calcDiff();
 	void calcIntersection();

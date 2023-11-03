@@ -3,6 +3,5 @@ include (plugin)
 openflipper_plugin (
     INSTALLDATA Icons
     TYPES TRIANGLEMESH POLYMESH
-    DIRS PolygonClipping
     )
 
