@@ -21,7 +21,7 @@ struct Node {
 	bool entry;
 	bool visited;
 	Node(node_pair& v, double a = 0, bool i = false)
-		: vec(v), alpha(a), intersect(i) {};
+		: vec(v), alpha(a), intersect(i), next(nullptr), prev(nullptr) {};
 	Node* nextNonIntersection() {
 		Node* a = this;
 		while (a && a->intersect) {
@@ -69,6 +69,9 @@ struct Node {
 		}
 
 		this->next->prev = this;
+	}
+	void show() {
+		std::cout << vec.first << ' ' << vec.second << '\n';
 	}
 };
 
@@ -124,6 +127,50 @@ Node* createLinkedList(vec& vecs) {
 	return ret;
 }
 
+
+bool identifyIntersections(Node* subjectList, Node* clipList) {
+	Node* subject;
+	Node* clip;
+	// 新建两个与头节点值相同的虚拟节点，与尾节点相连
+	// TODO 存疑
+	Node* auxs = subjectList->last();
+	auxs->next = new Node(subjectList->vec);
+	auxs->next->prev = auxs;
+
+	Node* auxc = clipList->last();
+	auxc->next = new Node(clipList->vec);
+	auxc->next->prev = auxc;
+
+	bool found = false;
+	for (subject = subjectList; subject->next != nullptr; subject = subject->next) {
+		if (!subject->intersect) {
+			for (clip = clipList; clip->next; clip = clip->next) {
+				if (!clip->intersect) {
+					auto a = subject->vec;
+					auto b = subject->next->nextNonIntersection()->vec;
+					auto c = clip->vec;
+					auto d = clip->next->nextNonIntersection()->vec;
+
+					auto i = segseg(a, b, c, d);
+
+					if (i.state == 0) {
+						found = true;
+						Node* intersectionSubject = new Node(i.r, distance(a, i.r) / distance(a, b), true);
+						Node* intersectionClip = new Node(i.r, distance(c, i.r) / distance(c, d), true);
+						intersectionSubject->neighbor = intersectionClip;
+						intersectionClip->neighbor = intersectionSubject;
+						intersectionSubject->show();
+						intersectionSubject->insertBetween(subject, subject->next->nextNonIntersection());
+						intersectionClip->insertBetween(clip, clip->next->nextNonIntersection());
+					}
+				}
+			}
+		}
+	}
+
+	return found;
+}
+
 void identifyIntersectionType(Node* subjectList, Node* clipList,
 	bool (*clipTest)(const std::vector<double>&), bool (*subjectTest)(const std::vector<double>&),
 	const std::string& type) {
@@ -155,52 +202,15 @@ void identifyIntersectionType(Node* subjectList, Node* clipList,
 		}
 	}
 }
-
-bool identifyIntersections(Node* subjectList, Node* clipList) {
-	Node* subject;
-	Node* clip;
-	// 新建两个与头节点值相同的虚拟节点，与尾节点相连
-	// TODO 存疑
-	Node* auxs = subjectList->last();
-	auxs->next = new Node(subjectList->vec);
-	auxs->next->prev = auxs;
-
-	Node* auxc = clipList->last();
-	auxc->next = new Node(clipList->vec);
-	auxc->next->prev = auxc;
-
-	bool found = false;
-	for (subject = subjectList; subject->next != nullptr; subject = subject->next) {
-		if (!subject->intersect) {
-			for (clip = clipList; clip->next; clip = clip->next) {
-				if (!clip->intersect) {
-					auto a = subject->vec;
-					auto b = subject->next->nextNonIntersection()->vec;
-					auto c = clip->vec;
-					auto d = clip->next->nextNonIntersection()->vec;
-
-					auto i = segseg(a, b, c, d);
-
-					if (i.state != 0) {
-						found = true;
-						Node* intersectionSubject = new Node(i.r, distance(a, i.r) / distance(a, b), true);
-						Node* intersectionClip = new Node(i.r, distance(c, i.r) / distance(c, d), true);
-						intersectionSubject->neighbor = intersectionClip;
-						intersectionClip->neighbor = intersectionSubject;
-						intersectionSubject->insertBetween(subject, subject->next->nextNonIntersection());
-						intersectionClip->insertBetween(clip, clip->next->nextNonIntersection());
-					}
-				}
-			}
-		}
-	}
-
-	return found;
-}
-vec polygonBoolean(vec subjectPoly, vec clipPoly, std::string operation) {
+vec polygonBoolean(vec subjectPoly, vec clipPoly, int type) {
 	auto subjectList = createLinkedList(subjectPoly);
 	auto clipList = createLinkedList(clipPoly);
 
 	auto isects = identifyIntersections(subjectList, clipList);
+	if (isects) {
+		// Phase 2: walk the resulting linked list and mark each intersection
+//          as entering or exiting
 
+	}
+	return vec();
 }
