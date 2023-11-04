@@ -201,7 +201,7 @@ void simplePlugin::calcUnion()
     printf("union\n");
     for (auto i : results) {
         for (auto j : i) {
-            printf("%.2f %.2f\n", j.first, j.second);
+            printf("%f %f\n", j.first, j.second);
         }
         printf("\n");
 
@@ -223,7 +223,7 @@ void simplePlugin::calcDiff()
     printf("Diff\n");
     for (auto i : results) {
         for (auto j : i) {
-            printf("%.2f %.2f\n", j.first, j.second);
+            printf("%f %f\n", j.first, j.second);
         }
         printf("\n");
     }
@@ -244,7 +244,7 @@ void simplePlugin::calcIntersection()
     printf("Intersection\n");
     for (auto i : results) {
         for (auto j : i) {
-            printf("%.2f %.2f\n", j.first, j.second);
+            printf("%f %f\n", j.first, j.second);
         }
         printf("\n");
 

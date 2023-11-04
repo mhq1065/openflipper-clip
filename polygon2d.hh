@@ -49,36 +49,93 @@ namespace myPoly {
 		bool isInside(Polygon* p);
 	};
 
-
+	// 求交点
+	// 过于复杂，问GPT
 	class segseg {
 	public:
-		double x;
-		double y;
-		double toSource;
-		double toClip;
+		double x = 0;
+		double y = 0;
+		double toSource = 0;
+		double toClip = 0;
+		bool result = false;
 
 		segseg(Vertex* s1, Vertex* s2, Vertex* c1, Vertex* c2) {
-			x = 0.0;
-			y = 0.0;
-			toSource = 0.0;
-			toClip = 0.0;
+			const double perturbation = 1.0001;
 
-			double d = (c2->y - c1->y) * (s2->x - s1->x) - (c2->x - c1->x) * (s2->y - s1->y);
+			Vertex vec_s1_c1(s1->x - c1->x, s1->y - c1->y);
+			Vertex vec_s2_c1(s2->x - c1->x, s2->y - c1->y);
+			Vertex vec_c2_c1(c2->x - c1->x, c2->y - c1->y);
+			// vec_c2_c1 rotation 90
+			Vertex vec_c2_c1_90(-vec_c2_c1.y, vec_c2_c1.x);
+			// dot product
+			float WEC_P1 = vec_s1_c1.x * vec_c2_c1_90.x + vec_s1_c1.y * vec_c2_c1_90.y;
+			float WEC_P2 = vec_s2_c1.x * vec_c2_c1_90.x + vec_s2_c1.y * vec_c2_c1_90.y;
 
-			if (abs(d) < eps)
-				return;
-
-			toSource = ((c2->x - c1->x) * (s1->y - c1->y) - (c2->y - c1->y) * (s1->x - c1->x)) / d;
-			toClip = ((s2->x - s1->x) * (s1->y - c1->y) - (s2->y - s1->y) * (s1->x - c1->x)) / d;
-
-			if (valid()) {
-				x = s1->x + toSource * (s2->x - s1->x);
-				y = s1->y + toSource * (s2->y - s1->y);
+			if (std::abs(WEC_P1) < std::numeric_limits<double>::epsilon())
+			{
+				// add perturbation
+				s1->x = (s1->x - s2->x) * perturbation + s2->x;
+				s1->y = (s1->y - s2->y) * perturbation + s2->y;
+				vec_s1_c1.x = s1->x - c1->x;	vec_s1_c1.y = s1->y - c1->y;
+				WEC_P1 = vec_s1_c1.x * vec_c2_c1_90.x + vec_s1_c1.y * vec_c2_c1_90.y;
+				WEC_P2 = vec_s2_c1.x * vec_c2_c1_90.x + vec_s2_c1.y * vec_c2_c1_90.y;
 			}
+			if (std::abs(WEC_P2) < std::numeric_limits<double>::epsilon())
+			{
+				// add perturbation
+				s2->x = (s2->x - s1->x) * perturbation + s1->x;
+				s2->y = (s2->y - s1->y) * perturbation + s1->y;
+				vec_s2_c1.x = s2->x - c1->x;	vec_s2_c1.y = s2->y - c1->y;
+				WEC_P1 = vec_s1_c1.x * vec_c2_c1_90.x + vec_s1_c1.y * vec_c2_c1_90.y;
+				WEC_P2 = vec_s2_c1.x * vec_c2_c1_90.x + vec_s2_c1.y * vec_c2_c1_90.y;
+			}
+			if (WEC_P1 * WEC_P2 < 0)
+			{
+				Vertex vec_c1_s1(c1->x - s1->x, c1->y - s1->y);
+				Vertex vec_c2_s1(c2->x - s1->x, c2->y - s1->y);
+				Vertex vec_s2_s1(s2->x - s1->x, s2->y - s1->y);
+				// vec_s2_s1 rotation 90
+				Vertex vec_s2_s1_90(-vec_s2_s1.y, vec_s2_s1.x);
+				// dot product
+				float WEC_Q1 = vec_c1_s1.x * vec_s2_s1_90.x + vec_c1_s1.y * vec_s2_s1_90.y;
+				float WEC_Q2 = vec_c2_s1.x * vec_s2_s1_90.x + vec_c2_s1.y * vec_s2_s1_90.y;
+
+				if (std::abs(WEC_Q1) < std::numeric_limits<double>::epsilon())
+				{
+					// add perturbation
+					c1->x = (c1->x - c2->x) * perturbation + c2->x;
+					c1->y = (c1->y - c2->y) * perturbation + c2->y;
+					vec_c1_s1.x = c1->x - s1->x;	vec_c1_s1.y = c1->y - s1->y;
+					WEC_Q1 = vec_c1_s1.x * vec_s2_s1_90.x + vec_c1_s1.y * vec_s2_s1_90.y;
+					WEC_Q2 = vec_c2_s1.x * vec_s2_s1_90.x + vec_c2_s1.y * vec_s2_s1_90.y;
+				}
+				if (std::abs(WEC_Q2) < std::numeric_limits<double>::epsilon())
+				{
+					// add perturbation
+					c2->x = (c2->x - c1->x) * perturbation + c1->x;
+					c2->y = (c2->y - c1->y) * perturbation + c1->y;
+					vec_c2_s1.x = c2->x - s1->x;	vec_c2_s1.y = c2->y - s1->y;
+					WEC_Q1 = vec_c1_s1.x * vec_s2_s1_90.x + vec_c1_s1.y * vec_s2_s1_90.y;
+					WEC_Q2 = vec_c2_s1.x * vec_s2_s1_90.x + vec_c2_s1.y * vec_s2_s1_90.y;
+				}
+				if (WEC_Q1 * WEC_Q2 <= 0)
+				{
+					toSource = WEC_P1 / (WEC_P1 - WEC_P2);
+					toClip = WEC_Q1 / (WEC_Q1 - WEC_Q2);
+
+					x = s1->x + toSource * vec_s2_s1.x;
+					y = s1->y + toSource * vec_s2_s1.y;
+					result = true;
+					return;
+				}
+			}
+
+			result= false;
+
 		}
 
 		bool valid() {
-			return (0 < toSource && toSource < 1) && (0 < toClip && toClip < 1);
+			return result;
 		}
 	};
 
@@ -189,7 +246,6 @@ namespace myPoly {
 		return points;
 	}
 
-	//TODO
 	inline std::vector<std::vector<std::pair<double, double>> > Polygon::clip(Polygon* clip, bool sourceForwards, bool clipForwards) {
 		Vertex* sourceVertex = this->first;
 		Vertex* clipVertex = clip->first;
@@ -199,7 +255,7 @@ namespace myPoly {
 		bool isIntersection = sourceForwards && clipForwards;
 		bool isDiff = !isUnion && !isIntersection;
 
-		// calculate and mark intersections  
+		// step 1 计算交点  
 		do {
 			if (!sourceVertex->_isIntersection) {
 				Vertex* clipVertex = clip->first;
@@ -232,7 +288,7 @@ namespace myPoly {
 			sourceVertex = sourceVertex->next;
 		} while (!sourceVertex->equals(*this->first));
 
-		// phase three - construct a list of clipped std::vector<std::pair<double, double>> gons  
+		// stage 2
 		sourceVertex = this->first;
 		clipVertex = clip->first;
 
@@ -258,7 +314,7 @@ namespace myPoly {
 			clipVertex = clipVertex->next;
 		} while (!clipVertex->equals(*clip->first));
 
-		// phase three - construct a list of clipped std::vector<std::pair<double, double>> gons
+		// phase three - construct a list of clipped 
 
 		std::vector<std::vector<std::pair<double, double>> > list;
 
@@ -291,6 +347,7 @@ namespace myPoly {
 
 		if (list.empty()) {
 			if (isUnion) {
+				// 判断是否为包含关系
 				if (sourceInClip)
 					list.push_back(clip->getPoints());
 				else if (clipInSource)
@@ -328,12 +385,12 @@ namespace myPoly {
 	{
 		if (first == nullptr)return;
 		auto t = first;
-		printf("start show std::vector<std::pair<double, double>> gon\n");
+		printf("start show\n");
 		do{
-			printf("%.2f %.2f\n", t->x, t->y);
+			printf("%f %f\n", t->x, t->y);
 			t = t->next;
 		} while (t&&t!=first);
-		printf("end show std::vector<std::pair<double, double>> gon\n");
+		printf("end show\n");
 	}
 
 	void Vertex::visit() {
@@ -347,6 +404,9 @@ namespace myPoly {
 		return x == v.x && y == v.y;
 	}
 
+	// 射线法判断是否在poly内部
+	// 往左射一条射线，判断交线数量
+	// if操作：若在边的右侧则返回true，若在左侧则返回false，通过异或操作计数
 	inline bool myPoly::Vertex::isInside(Polygon* p)
 	{
 		bool oddNodes = false;
