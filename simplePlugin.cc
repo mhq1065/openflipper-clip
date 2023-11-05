@@ -1,22 +1,22 @@
 #include "simplePlugin.hh"
 #include "polygon2d.hh"
 
-void initVector1(QVector<QPair<double, double>>& dataVector) {
+void initVector1(std::vector<std::pair<double, double>>& dataVector) {
     dataVector.clear();
-    dataVector.append(QPair<double, double>(0, 0));
-    dataVector.append(QPair<double, double>(3, 0));
-    dataVector.append(QPair<double, double>(3, 3));
-    dataVector.append(QPair<double, double>(0, 3));
-    //dataVector.append(QPair<double, double>(0, 0));
+    dataVector.push_back(std::pair<double, double>(0, 0));
+    dataVector.push_back(std::pair<double, double>(3, 0));
+    dataVector.push_back(std::pair<double, double>(3, 3));
+    dataVector.push_back(std::pair<double, double>(0, 3));
+    //dataVector.append(std::pair<double, double>(0, 0));
 
 }
-void initVector2(QVector<QPair<double, double>>& dataVector) {
+void initVector2(std::vector<std::pair<double, double>>& dataVector) {
     dataVector.clear();
-    dataVector.append(QPair<double, double>(1, 1));
-    dataVector.append(QPair<double, double>(4, 1));
-    dataVector.append(QPair<double, double>(4, 4));
-    dataVector.append(QPair<double, double>(1, 4));
-    //dataVector.append(QPair<double, double>(1, 1));
+    dataVector.push_back(std::pair<double, double>(1, 1));
+    dataVector.push_back(std::pair<double, double>(4, 1));
+    dataVector.push_back(std::pair<double, double>(4, 4));
+    dataVector.push_back(std::pair<double, double>(1, 4));
+    //dataVector.append(std::pair<double, double>(1, 1));
 }
 
 simplePlugin::simplePlugin():iterationsSpinbox_(0)
@@ -29,38 +29,44 @@ void simplePlugin::initializePlugin()
 {
     // Create the Toolbox Widget
     _toolBox = new QWidget();
-    QPushButton* uploadButton1 = new QPushButton("upload 1", _toolBox);
-    QPushButton* uploadButton2 = new QPushButton("upload 2", _toolBox);
-
-    QLabel* tipLabel1 = new QLabel("file 1", _toolBox);
-    tipLabel1->setObjectName("tipLabel1");
-    QLabel* tipLabel2 = new QLabel("file 2", _toolBox);
-    tipLabel1->setObjectName("tipLabel2");
-
-    QPushButton* unionClippingButton = new QPushButton ("union");
-    QPushButton* diffClippingButton = new QPushButton ("diff");
-    QPushButton* IntersectionClippingButton = new QPushButton ("Intersection");
-    QPushButton* clearButton = new QPushButton ("clear");
-
+    QPushButton* uploadButton1 = new QPushButton("upload A", _toolBox);
+    QPushButton* uploadButton2 = new QPushButton("upload B", _toolBox);
+    QPushButton* unionClippingButton = new QPushButton("union");
+    QPushButton* diffClippingButton1 = new QPushButton("diff(A-B)");
+    QPushButton* diffClippingButton2 = new QPushButton("diff(B-A)");
+    QPushButton* IntersectionClippingButton = new QPushButton("Intersection");
+    QPushButton* clearButton = new QPushButton("clear");
+    QLabel* tipLabel1 = new QLabel("file A", _toolBox);
+    QLabel* tipLabel2 = new QLabel("file B", _toolBox);
+    QPushButton* draw_button1 = new QPushButton("draw file A", _toolBox);
+    QPushButton* draw_button2 = new QPushButton("draw file B", _toolBox);
     QGridLayout* gridLayout = new QGridLayout(_toolBox);
+
+    clearButton->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
 
     gridLayout->addWidget(uploadButton1, 0, 0);
     gridLayout->addWidget(tipLabel1, 0, 1);
+    gridLayout->addWidget(draw_button1, 0, 2);
     gridLayout->addWidget(uploadButton2, 1, 0);
     gridLayout->addWidget(tipLabel2, 1, 1);
-    gridLayout->addWidget(unionClippingButton, 2, 0);
-    gridLayout->addWidget(diffClippingButton, 2, 1);
-    gridLayout->addWidget(IntersectionClippingButton, 3, 0);
-    gridLayout->addWidget(clearButton, 3, 1);
+    gridLayout->addWidget(draw_button2, 1, 2);
+    gridLayout->addWidget(unionClippingButton, 2, 0); 
+    gridLayout->addWidget(IntersectionClippingButton, 2, 1);
+    gridLayout->addWidget(diffClippingButton1, 2, 2);
+    gridLayout->addWidget(diffClippingButton2, 3, 0);
+    gridLayout->addWidget(clearButton, 3, 1, 1, 2);
     QIcon* toolIcon = new QIcon(OpenFlipper::Options::iconDirStr() + OpenFlipper::Options::dirSeparator() + "b.png");
 
     //connect(smoothButton, SIGNAL(clicked()), this, SLOT(simpleLaplace()));
     connect(uploadButton1, SIGNAL(clicked()), this, SLOT(onUploadButton1Clicked()));
     connect(uploadButton2, SIGNAL(clicked()), this, SLOT(onUploadButton2Clicked()));
     connect(unionClippingButton, SIGNAL(clicked()), this, SLOT(calcUnion()));
-    connect(diffClippingButton, SIGNAL(clicked()), this, SLOT(calcDiff()));
+    connect(diffClippingButton1, SIGNAL(clicked()), this, SLOT(calcDiff1()));
+    connect(diffClippingButton2, SIGNAL(clicked()), this, SLOT(calcDiff2()));
     connect(IntersectionClippingButton, SIGNAL(clicked()), this, SLOT(calcIntersection()));
     connect(clearButton, SIGNAL(clicked()), this, SLOT(clearDraw()));
+    connect(draw_button1, SIGNAL(clicked()), this, SLOT(drawA()));
+    connect(draw_button2, SIGNAL(clicked()), this, SLOT(drawB()));
 
     emit addToolbox(tr("boolcalc"), _toolBox, toolIcon);
 }
@@ -83,7 +89,7 @@ void simplePlugin::onUploadButton1Clicked() {
                 double value1 = values[0].toFloat(&ok1);
                 double value2 = values[1].toFloat(&ok2);
                 if (ok1 && ok2) {
-                    dataVector1.append(QPair<double, double>(value1, value2));
+                    dataVector1.push_back(std::pair<double, double>(value1, value2));
                 }
             }
         }
@@ -113,7 +119,7 @@ void simplePlugin::onUploadButton2Clicked() {
                 double value1 = values[0].toFloat(&ok1);
                 double value2 = values[1].toFloat(&ok2);
                 if (ok1 && ok2) {
-                    dataVector2.append(QPair<double, double>(value1, value2));
+                    dataVector2.push_back(std::pair<double, double>(value1, value2));
                 }
             }
         }
@@ -133,7 +139,7 @@ void simplePlugin::onUploadButton2Clicked() {
 //        }
 //    }
 //}
-std::vector<std::pair<double, double>> getCPath(QVector<QPair<double, double>>&dataVector) {
+std::vector<std::pair<double, double>> getCPath(std::vector<std::pair<double, double>>&dataVector) {
     std::vector<std::pair<double,double>> t;
     for (auto i:dataVector) {
         t.push_back(std::make_pair(i.first, i.second));
@@ -172,7 +178,7 @@ void simplePlugin::draw(std::vector<std::vector<std::pair<double, double>>> p){
 
             // 更新网格对象  
             mesh->update_normals();
-            mesh->request_vertex_normals();
+            //mesh->request_vertex_normals();
             mesh->update_face_normals();
             emit updatedObject(newObjectId, UPDATE_COLOR);
         }
@@ -190,14 +196,28 @@ void simplePlugin::draw(std::vector<std::vector<std::pair<double, double>>> p){
         emit log(LOGERR, "ERR TO DRAW");
     }
 }
+void simplePlugin::drawA()
+{
+    std::vector<std::vector<std::pair<double, double>>> p;
+    p.push_back(dataVector1);
+    draw(p);
+}
+
+void simplePlugin::drawB()
+{
+    std::vector<std::vector<std::pair<double, double>>> p;
+    p.push_back(dataVector2);
+    draw(p);
+}
+
 void simplePlugin::calcUnion()
 {
     //initVector1(this->dataVector1);
     //initVector2(this->dataVector2);
     emit log(LOGINFO, "calcUnion");
-    auto a = getCPath(this->dataVector1);
-    auto b = getCPath(this->dataVector2);
-    auto results = myPoly::Union(a, b);
+    //auto a = getCPath(this->dataVector1);
+    //auto b = getCPath(this->dataVector2);
+    auto results = myPoly::Union(this->dataVector1, this->dataVector2);
     printf("union\n");
     for (auto i : results) {
         for (auto j : i) {
@@ -211,14 +231,36 @@ void simplePlugin::calcUnion()
     //exampleFunction();
 }
 
-void simplePlugin::calcDiff()
+void simplePlugin::calcDiff1()
 {
     //initVector1(this->dataVector1);
     //initVector2(this->dataVector2);
     emit log(LOGINFO, "calcDiff");
-    auto a = getCPath(this->dataVector1);
-    auto b = getCPath(this->dataVector2);
-    auto results = myPoly::Diff(a, b);
+    //auto a = getCPath(this->dataVector1);
+    //auto b = getCPath(this->dataVector2);
+    auto results = myPoly::Diff(this->dataVector1, this->dataVector2);
+
+    printf("Diff\n");
+    for (auto i : results) {
+        for (auto j : i) {
+            printf("%f %f\n", j.first, j.second);
+        }
+        printf("\n");
+    }
+    draw(results);
+
+    emit log(LOGINFO, "calcDiff success");
+    //exampleFunction();
+}
+
+void simplePlugin::calcDiff2()
+{
+    //initVector1(this->dataVector1);
+    //initVector2(this->dataVector2);
+    emit log(LOGINFO, "calcDiff");
+    //auto a = getCPath(this->dataVector1);
+    //auto b = getCPath(this->dataVector2);
+    auto results = myPoly::Diff(this->dataVector2, this->dataVector1);
 
     printf("Diff\n");
     for (auto i : results) {
@@ -238,9 +280,9 @@ void simplePlugin::calcIntersection()
     //initVector1(this->dataVector1);
     //initVector2(this->dataVector2);
     emit log(LOGINFO, "calcIntersection");
-    auto a = getCPath(this->dataVector1);
-    auto b = getCPath(this->dataVector2);
-    auto results = myPoly::Intersection(a, b);
+    //auto a = getCPath(this->dataVector1);
+    //auto b = getCPath(this->dataVector2);
+    auto results = myPoly::Intersection(this->dataVector1, this->dataVector2);
     printf("Intersection\n");
     for (auto i : results) {
         for (auto j : i) {

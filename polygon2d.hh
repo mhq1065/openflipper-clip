@@ -48,8 +48,8 @@ namespace myPoly {
 		bool isInside(Polygon* p);
 	};
 
-	// Çó½»µã
-	// ¹ıÓÚ¸´ÔÓ£¬ÎÊGPT
+	// æ±‚äº¤ç‚¹
+	// è¿‡äºå¤æ‚ï¼Œé—®GPT
 	class segseg {
 	public:
 		double x = 0;
@@ -71,7 +71,8 @@ namespace myPoly {
 			double WEC_P1 = vec_s1_c1.x * vec_c2_c1_90.x + vec_s1_c1.y * vec_c2_c1_90.y;
 			double WEC_P2 = vec_s2_c1.x * vec_c2_c1_90.x + vec_s2_c1.y * vec_c2_c1_90.y;
 
-			if (std::abs(WEC_P1) < eps)
+			//if (std::abs(WEC_P1) < eps)
+			if (std::abs(WEC_P1) ==0)
 			{
 				// add perturbation
 				s1->x = (s1->x - s2->x) * perturbation + s2->x;
@@ -81,7 +82,7 @@ namespace myPoly {
 				WEC_P1 = vec_s1_c1.x * vec_c2_c1_90.x + vec_s1_c1.y * vec_c2_c1_90.y;
 				WEC_P2 = vec_s2_c1.x * vec_c2_c1_90.x + vec_s2_c1.y * vec_c2_c1_90.y;
 			}
-			if (std::abs(WEC_P2) < eps)
+			if (std::abs(WEC_P2) ==0)
 			{
 				// add perturbation
 				s2->x = (s2->x - s1->x) * perturbation + s1->x;
@@ -102,7 +103,7 @@ namespace myPoly {
 				float WEC_Q1 = vec_c1_s1.x * vec_s2_s1_90.x + vec_c1_s1.y * vec_s2_s1_90.y;
 				float WEC_Q2 = vec_c2_s1.x * vec_s2_s1_90.x + vec_c2_s1.y * vec_s2_s1_90.y;
 
-				if (std::abs(WEC_Q1) < eps)
+				if (std::abs(WEC_Q1) ==0)
 				{
 					// add perturbation
 					c1->x = (c1->x - c2->x) * perturbation + c2->x;
@@ -112,7 +113,7 @@ namespace myPoly {
 					WEC_Q1 = vec_c1_s1.x * vec_s2_s1_90.x + vec_c1_s1.y * vec_s2_s1_90.y;
 					WEC_Q2 = vec_c2_s1.x * vec_s2_s1_90.x + vec_c2_s1.y * vec_s2_s1_90.y;
 				}
-				if (std::abs(WEC_Q2) < eps)
+				if (std::abs(WEC_Q2) ==0)
 				{
 					// add perturbation
 					c2->x = (c2->x - c1->x) * perturbation + c1->x;
@@ -259,7 +260,7 @@ namespace myPoly {
 		bool isIntersection = sourceForwards && clipForwards;
 		bool isDiff = !isUnion && !isIntersection;
 
-		// step 1 ¼ÆËã½»µã  
+		// step 1 è®¡ç®—äº¤ç‚¹  
 		do {
 			if (!sourceVertex->_isIntersection) {
 				Vertex* clipVertex = clip->first;
@@ -351,7 +352,7 @@ namespace myPoly {
 
 		if (list.empty()) {
 			if (isUnion) {
-				// ÅĞ¶ÏÊÇ·ñÎª°üº¬¹ØÏµ
+				// åˆ¤æ–­æ˜¯å¦ä¸ºåŒ…å«å…³ç³»
 				if (sourceInClip)
 					list.push_back(clip->getPoints());
 				else if (clipInSource)
@@ -408,9 +409,9 @@ namespace myPoly {
 		return x == v.x && y == v.y;
 	}
 
-	// ÉäÏß·¨ÅĞ¶ÏÊÇ·ñÔÚpolyÄÚ²¿
-	// Íù×óÉäÒ»ÌõÉäÏß£¬ÅĞ¶Ï½»ÏßÊıÁ¿
-	// if²Ù×÷£ºÈôÔÚ±ßµÄÓÒ²àÔò·µ»Øtrue£¬ÈôÔÚ×ó²àÔò·µ»Øfalse£¬Í¨¹ıÒì»ò²Ù×÷¼ÆÊı
+	// å°„çº¿æ³•åˆ¤æ–­æ˜¯å¦åœ¨polyå†…éƒ¨
+	// å¾€å·¦å°„ä¸€æ¡å°„çº¿ï¼Œåˆ¤æ–­äº¤çº¿æ•°é‡
+	// ifæ“ä½œï¼šè‹¥åœ¨è¾¹çš„å³ä¾§åˆ™è¿”å›trueï¼Œè‹¥åœ¨å·¦ä¾§åˆ™è¿”å›falseï¼Œé€šè¿‡å¼‚æˆ–æ“ä½œè®¡æ•°
 	inline bool myPoly::Vertex::isInside(Polygon* p)
 	{
 		bool oddNodes = false;

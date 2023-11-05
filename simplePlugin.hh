@@ -50,7 +50,7 @@ public:
 private:
 	QWidget* _toolBox;
 	QSpinBox* iterationsSpinbox_;
-	QVector<QPair<double, double>>dataVector1, dataVector2;
+	std::vector<std::pair<double, double>>dataVector1, dataVector2;
 	void exampleFunction();
 private slots:
 	// BaseInterface
@@ -59,8 +59,11 @@ private slots:
 	void onUploadButton1Clicked();
 	void onUploadButton2Clicked();
 	void draw(std::vector<std::vector<std::pair<double, double>>> p);
+	void drawA();
+	void drawB();
 	void calcUnion();
-	void calcDiff();
+	void calcDiff1();
+	void calcDiff2();
 	void calcIntersection();
 	void clearDraw();
 
