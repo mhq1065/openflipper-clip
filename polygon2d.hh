@@ -2,7 +2,6 @@
 
 #include <iostream>
 #include <vector>
-#define eps 1e-6
 
 namespace myPoly {
 	class Vertex;
@@ -60,7 +59,8 @@ namespace myPoly {
 		bool result = false;
 
 		segseg(Vertex* s1, Vertex* s2, Vertex* c1, Vertex* c2) {
-			const double perturbation = 1.0001;
+			const double perturbation = 1.000001;
+			const double eps = 1e-3;
 
 			Vertex vec_s1_c1(s1->x - c1->x, s1->y - c1->y);
 			Vertex vec_s2_c1(s2->x - c1->x, s2->y - c1->y);
@@ -68,24 +68,26 @@ namespace myPoly {
 			// vec_c2_c1 rotation 90
 			Vertex vec_c2_c1_90(-vec_c2_c1.y, vec_c2_c1.x);
 			// dot product
-			float WEC_P1 = vec_s1_c1.x * vec_c2_c1_90.x + vec_s1_c1.y * vec_c2_c1_90.y;
-			float WEC_P2 = vec_s2_c1.x * vec_c2_c1_90.x + vec_s2_c1.y * vec_c2_c1_90.y;
+			double WEC_P1 = vec_s1_c1.x * vec_c2_c1_90.x + vec_s1_c1.y * vec_c2_c1_90.y;
+			double WEC_P2 = vec_s2_c1.x * vec_c2_c1_90.x + vec_s2_c1.y * vec_c2_c1_90.y;
 
-			if (std::abs(WEC_P1) < std::numeric_limits<double>::epsilon())
+			if (std::abs(WEC_P1) < eps)
 			{
 				// add perturbation
 				s1->x = (s1->x - s2->x) * perturbation + s2->x;
 				s1->y = (s1->y - s2->y) * perturbation + s2->y;
-				vec_s1_c1.x = s1->x - c1->x;	vec_s1_c1.y = s1->y - c1->y;
+				vec_s1_c1.x = s1->x - c1->x;
+				vec_s1_c1.y = s1->y - c1->y;
 				WEC_P1 = vec_s1_c1.x * vec_c2_c1_90.x + vec_s1_c1.y * vec_c2_c1_90.y;
 				WEC_P2 = vec_s2_c1.x * vec_c2_c1_90.x + vec_s2_c1.y * vec_c2_c1_90.y;
 			}
-			if (std::abs(WEC_P2) < std::numeric_limits<double>::epsilon())
+			if (std::abs(WEC_P2) < eps)
 			{
 				// add perturbation
 				s2->x = (s2->x - s1->x) * perturbation + s1->x;
 				s2->y = (s2->y - s1->y) * perturbation + s1->y;
-				vec_s2_c1.x = s2->x - c1->x;	vec_s2_c1.y = s2->y - c1->y;
+				vec_s2_c1.x = s2->x - c1->x;
+				vec_s2_c1.y = s2->y - c1->y;
 				WEC_P1 = vec_s1_c1.x * vec_c2_c1_90.x + vec_s1_c1.y * vec_c2_c1_90.y;
 				WEC_P2 = vec_s2_c1.x * vec_c2_c1_90.x + vec_s2_c1.y * vec_c2_c1_90.y;
 			}
@@ -100,21 +102,23 @@ namespace myPoly {
 				float WEC_Q1 = vec_c1_s1.x * vec_s2_s1_90.x + vec_c1_s1.y * vec_s2_s1_90.y;
 				float WEC_Q2 = vec_c2_s1.x * vec_s2_s1_90.x + vec_c2_s1.y * vec_s2_s1_90.y;
 
-				if (std::abs(WEC_Q1) < std::numeric_limits<double>::epsilon())
+				if (std::abs(WEC_Q1) < eps)
 				{
 					// add perturbation
 					c1->x = (c1->x - c2->x) * perturbation + c2->x;
 					c1->y = (c1->y - c2->y) * perturbation + c2->y;
-					vec_c1_s1.x = c1->x - s1->x;	vec_c1_s1.y = c1->y - s1->y;
+					vec_c1_s1.x = c1->x - s1->x;
+					vec_c1_s1.y = c1->y - s1->y;
 					WEC_Q1 = vec_c1_s1.x * vec_s2_s1_90.x + vec_c1_s1.y * vec_s2_s1_90.y;
 					WEC_Q2 = vec_c2_s1.x * vec_s2_s1_90.x + vec_c2_s1.y * vec_s2_s1_90.y;
 				}
-				if (std::abs(WEC_Q2) < std::numeric_limits<double>::epsilon())
+				if (std::abs(WEC_Q2) < eps)
 				{
 					// add perturbation
 					c2->x = (c2->x - c1->x) * perturbation + c1->x;
 					c2->y = (c2->y - c1->y) * perturbation + c1->y;
-					vec_c2_s1.x = c2->x - s1->x;	vec_c2_s1.y = c2->y - s1->y;
+					vec_c2_s1.x = c2->x - s1->x;
+					vec_c2_s1.y = c2->y - s1->y;
 					WEC_Q1 = vec_c1_s1.x * vec_s2_s1_90.x + vec_c1_s1.y * vec_s2_s1_90.y;
 					WEC_Q2 = vec_c2_s1.x * vec_s2_s1_90.x + vec_c2_s1.y * vec_s2_s1_90.y;
 				}
