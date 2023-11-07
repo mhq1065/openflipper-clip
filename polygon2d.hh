@@ -144,6 +144,8 @@ namespace myPoly {
 		}
 	};
 
+	std::vector<double, double> get_ring(std::vector<double, double> a, std::vector<double, double> b);
+
 	Vertex* createIntersection(double x, double y, double distance) {
 		auto vertex = new Vertex(x, y);
 		vertex->_distance = distance;
@@ -151,9 +153,12 @@ namespace myPoly {
 		vertex->_isEntry = false;
 		return vertex;
 	}
-
 	inline Polygon::Polygon(std::vector<std::pair<double, double>>  p, bool arrayVertices)
 		: first(nullptr), vertices(0), _lastUnprocessed(nullptr), _arrayVertices(arrayVertices) {
+		if (p.size() >= 2 && p[0] == p[p.size() - 1]) {
+			p.pop_back();
+		}
+
 		for (auto& point : p) {
 			addVertex(point);
 		}
@@ -235,19 +240,13 @@ namespace myPoly {
 		std::vector<std::pair<double, double>>  points;
 		Vertex* v = this->first;
 
-		if (this->_arrayVertices) {
-			do {
-				points.push_back(std::make_pair(v->x, v->y));
-				v = v->next;
-			} while (v != this->first);
+		do {
+			points.push_back(std::make_pair(v->x, v->y));
+			v = v->next;
+		} while (v != this->first);
+		if (!points.empty() && points.front() == points.back()) {
+			points.pop_back();  // 删除最后一个元素  
 		}
-		else {
-			do {
-				points.push_back(std::make_pair(v->x, v->y));
-				v = v->next;
-			} while (v != this->first);
-		}
-
 		return points;
 	}
 
@@ -370,8 +369,8 @@ namespace myPoly {
 			}
 			else {
 				if (sourceInClip) {
-					list.push_back(clip->getPoints());
-					list.push_back(this->getPoints());
+					//list.push_back(clip->getPoints());
+					//list.push_back(this->getPoints());
 				}
 				else if (clipInSource) {
 					list.push_back(this->getPoints());
@@ -421,11 +420,9 @@ namespace myPoly {
 		const double y = this->y;
 
 		do {
-			if ((vertex->y < y && next->y >= y ||
-				next->y < y && vertex->y >= y) &&
+			if ((vertex->y < y && next->y >= y || next->y < y && vertex->y >= y) &&
 				(vertex->x <= x || next->x <= x)) {
-				oddNodes ^= (vertex->x + (y - vertex->y) /
-					(next->y - vertex->y) * (next->x - vertex->x) < x);
+				oddNodes ^= (vertex->x + (y - vertex->y) / (next->y - vertex->y) * (next->x - vertex->x) < x);
 			}
 
 			vertex = vertex->next;
@@ -433,6 +430,12 @@ namespace myPoly {
 		} while (!vertex->equals(*p->first));
 		return oddNodes;
 	}
+
+
+	/*std::vector<double, double> myPoly::get_ring(std::vector<double, double> a, std::vector<double, double> b)
+	{
+		return std::vector<double, double>();
+	}*/
 
 	std::vector<std::vector<std::pair<double, double>> > Boolean(
 		std::vector<std::pair<double, double>>polygonA,

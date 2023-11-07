@@ -1,21 +1,42 @@
 #include "simplePlugin.hh"
 #include "polygon2d.hh"
 
+
 void initVector1(std::vector<std::pair<double, double>>& dataVector) {
     dataVector.clear();
     dataVector.push_back(std::pair<double, double>(0, 0));
     dataVector.push_back(std::pair<double, double>(3, 0));
     dataVector.push_back(std::pair<double, double>(3, 3));
+
+    dataVector.push_back(std::pair<double, double>(2.6, 2.6));
+    dataVector.push_back(std::pair<double, double>(2.6, 2.5));
+    dataVector.push_back(std::pair<double, double>(2.5, 2.5));
+    dataVector.push_back(std::pair<double, double>(2.5, 2.6));
+    dataVector.push_back(std::pair<double, double>(2.6, 2.6));
+
+    dataVector.push_back(std::pair<double, double>(3, 3));
+
+
     dataVector.push_back(std::pair<double, double>(0, 3));
+    dataVector.push_back(std::pair<double, double>(0, 0));
+
+    dataVector.push_back(std::pair<double, double>(1, 1));
+    dataVector.push_back(std::pair<double, double>(1, 2));
+    dataVector.push_back(std::pair<double, double>(2, 2));
+    dataVector.push_back(std::pair<double, double>(2, 1));
+    dataVector.push_back(std::pair<double, double>(1, 1));
+
+    dataVector.push_back(std::pair<double, double>(0, 0));
+
     //dataVector.append(std::pair<double, double>(0, 0));
 
 }
 void initVector2(std::vector<std::pair<double, double>>& dataVector) {
     dataVector.clear();
     dataVector.push_back(std::pair<double, double>(1, 1));
-    dataVector.push_back(std::pair<double, double>(4, 1));
-    dataVector.push_back(std::pair<double, double>(4, 4));
-    dataVector.push_back(std::pair<double, double>(1, 4));
+    dataVector.push_back(std::pair<double, double>(2, 1));
+    dataVector.push_back(std::pair<double, double>(2, 2));
+    dataVector.push_back(std::pair<double, double>(1, 2));
     //dataVector.append(std::pair<double, double>(1, 1));
 }
 
@@ -148,6 +169,8 @@ std::vector<std::pair<double, double>> getCPath(std::vector<std::pair<double, do
 }
 
 void simplePlugin::draw(std::vector<std::vector<std::pair<double, double>>> p){
+    PluginFunctions::setDrawMode(ACG::SceneGraph::DrawModes::SOLID_FACES_COLORED);
+    emit deleteAllObjects();
     int newObjectId = -1;
 
     emit addEmptyObject(DATA_POLY_MESH, newObjectId);
@@ -159,26 +182,71 @@ void simplePlugin::draw(std::vector<std::vector<std::pair<double, double>>> p){
         emit log(LOGINFO, "draw object");
 
         // Now you can use the object as usual, e.g. Get the node
-
         PolyMesh* mesh = PluginFunctions::polyMesh(object);
         std::vector<PolyMesh::VertexHandle> face_vhandles;
+
+        std::vector<int> deeps;
+        //to get deepth of
         for (auto i : p) {
-            face_vhandles.clear();
-            for (auto j : i) {
-                auto v0 = mesh->add_vertex(PolyMesh::Point(j.first, j.second, 0));
-                face_vhandles.push_back(v0);
+            int deepth = 0;
+            myPoly::Vertex thisVertex(i.front().first, i.front().second);
+            for (auto j : p) {
+                if (j != i) {
+                    myPoly::Polygon thatPoly(j, false);
+                    if (thisVertex.isInside(&thatPoly)) {
+                        deepth++;
+                    }
+
+                }
+
             }
-            printf("\n");
+            std::cout << deepth << endl;
+            deeps.push_back(deepth);
+        }
+        for (auto i : deeps) {
+            printf("%d\n", i);
+        }
+        OpenMesh::Vec4f white(1.0f, 1.0f, 1.0f, 1.0f);
+        OpenMesh::Vec4f black(0.0f, 0.0f, 0.0f, 1.0f);
 
-            mesh->add_face(face_vhandles);
+        for (auto i = 0; i <p.size();i++) {
             
-            /*for (auto v_it = mesh->faces_begin(); v_it != mesh->faces_end(); ++v_it) {
-                mesh->set_color(*v_it, PolyMesh::Color(0.5, 0.50, 0.60, 0.4));
-            }*/
+            if (p[i].size() == 0)continue;
 
+            if (deeps[i] == 0) {
+                face_vhandles.clear();
+                for (auto j : p[i]) {
+                    auto v0 = mesh->add_vertex(PolyMesh::Point(j.first, j.second, 0));
+                    //printf("%f %f\n", j.first, j.second);
+                    face_vhandles.push_back(v0);
+                }
+
+                auto t = mesh->add_face(face_vhandles);
+                mesh->set_color(t, black);
+            }
+            else {
+                face_vhandles.clear();
+                for (auto j : p[i]) {
+                    auto v0 = mesh->add_vertex(PolyMesh::Point(j.first, j.second, 0.001));
+                    //printf("%f %f\n", j.first, j.second);
+                    face_vhandles.push_back(v0);
+                }
+                auto t = mesh->add_face(face_vhandles);
+                mesh->set_color(t, white);
+
+                face_vhandles.clear();
+                for (auto j : p[i]) {
+                    auto v0 = mesh->add_vertex(PolyMesh::Point(j.first, j.second, -0.001));
+                    //printf("%f %f\n", j.first, j.second);
+                    face_vhandles.push_back(v0);
+                }
+                t = mesh->add_face(face_vhandles);
+                mesh->set_color(t, white);
+            }
             // 更新网格对象  
             mesh->update_normals();
-            //mesh->request_vertex_normals();
+
+            mesh->request_vertex_normals();
             mesh->update_face_normals();
             emit updatedObject(newObjectId, UPDATE_COLOR);
         }
@@ -198,6 +266,8 @@ void simplePlugin::draw(std::vector<std::vector<std::pair<double, double>>> p){
 }
 void simplePlugin::drawA()
 {
+    //initVector1(this->dataVector1);
+    //initVector2(this->dataVector2);
     std::vector<std::vector<std::pair<double, double>>> p;
     p.push_back(dataVector1);
     draw(p);

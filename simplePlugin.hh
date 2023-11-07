@@ -12,6 +12,8 @@
 #include <ObjectTypes/PolyMesh/PolyMesh.hh>
 #include <ObjectTypes/PolyMesh/PolyMeshTypes.hh>
 #include <ObjectTypes/TriangleMesh/TriangleMesh.hh>
+#include <ObjectTypes/TriangleMesh/TriangleMeshTypes.hh>
+
 #include <OpenMesh/Core/System/config.h>
 #include <OpenMesh/Core/Mesh/Status.hh>
 #include <ACG/Scenegraph/TransformNode.hh>
