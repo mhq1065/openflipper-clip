@@ -12,6 +12,8 @@
 #include <ObjectTypes/PolyMesh/PolyMesh.hh>
 #include <ObjectTypes/PolyMesh/PolyMeshTypes.hh>
 #include <ObjectTypes/TriangleMesh/TriangleMesh.hh>
+#include <ObjectTypes/TriangleMesh/TriangleMeshTypes.hh>
+
 #include <OpenMesh/Core/System/config.h>
 #include <OpenMesh/Core/Mesh/Status.hh>
 #include <ACG/Scenegraph/TransformNode.hh>
@@ -61,10 +63,13 @@ private slots:
 	void simpleLaplace();
 	void onUploadButton1Clicked();
 	void onUploadButton2Clicked();
-	void draw(PathsD p);
+	void draw(PathsD& p);
+	void drawA();
+	void drawB();
 	void calcUnion();
-	void calcDiff();
-	void calcXOR();
+	void calcDiff1();
+	void calcDiff2();
+	void calcIntersection();
 	void clearDraw();
 
 public slots:
