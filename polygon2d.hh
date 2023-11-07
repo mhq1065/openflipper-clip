@@ -144,8 +144,6 @@ namespace myPoly {
 		}
 	};
 
-	std::vector<double, double> get_ring(std::vector<double, double> a, std::vector<double, double> b);
-
 	Vertex* createIntersection(double x, double y, double distance) {
 		auto vertex = new Vertex(x, y);
 		vertex->_distance = distance;

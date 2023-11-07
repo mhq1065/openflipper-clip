@@ -227,21 +227,21 @@ void simplePlugin::draw(std::vector<std::vector<std::pair<double, double>>> p){
             else {
                 face_vhandles.clear();
                 for (auto j : p[i]) {
-                    auto v0 = mesh->add_vertex(PolyMesh::Point(j.first, j.second, 0.001));
+                    auto v0 = mesh->add_vertex(PolyMesh::Point(j.first, j.second, 0));
                     //printf("%f %f\n", j.first, j.second);
                     face_vhandles.push_back(v0);
                 }
                 auto t = mesh->add_face(face_vhandles);
                 mesh->set_color(t, white);
 
-                face_vhandles.clear();
+                /*face_vhandles.clear();
                 for (auto j : p[i]) {
-                    auto v0 = mesh->add_vertex(PolyMesh::Point(j.first, j.second, -0.001));
-                    //printf("%f %f\n", j.first, j.second);
+                    auto v0 = mesh->add_vertex(PolyMesh::Point(j.first, j.second, -deeps[i] * 0.01));
+                    printf("%f %f\n", j.first, j.second);
                     face_vhandles.push_back(v0);
                 }
                 t = mesh->add_face(face_vhandles);
-                mesh->set_color(t, white);
+                mesh->set_color(t, white);*/
             }
             // 更新网格对象  
             mesh->update_normals();
